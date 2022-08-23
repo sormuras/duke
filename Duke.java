@@ -12,6 +12,33 @@ sealed interface Duke {
 
   final class Program extends BuildProgram implements Duke {
     // TODO Here be your dragons...
+    /* TODO Introduce a new action by declaring a new method.
+    @Description("Greet current user")
+    public void hi() {
+      System.out.printf("Hi %s!%n", System.getProperty("user.name", "Nobody"));
+    }
+    */
+
+    /* TODO Wrap something around existing an action by overriding it.
+    @Override
+    public void build() {
+      log("BEGIN");
+      try {
+        super.build();
+      } catch (Throwable throwable) {
+        logbook.log(Level.ERROR, "build() failed: " + throwable.getMessage());
+        throw throwable;
+      }
+      log("END.");
+    }
+    */
+
+    /* TODO Rewrite an action by overriding and not calling it.
+    @Override
+    public void test() {
+      if (Math.random() < 0.5d) throw new RuntimeException("Test failed. Because.");
+    }
+    */
   }
 
   class BuildProgram extends ToolProgram {
