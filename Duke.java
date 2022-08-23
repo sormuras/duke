@@ -1,25 +1,30 @@
 import java.io.PrintWriter;
 import java.lang.System.Logger.Level;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.stream.Stream;
-import jdk.jfr.Description;
 
+/** An enhanced entry-point exploration. */
 sealed interface Duke {
 
+  /** Your configuration, your actions, your program. */
   final class Program extends BuildProgram implements Duke {
-    // TODO Here be your dragons...
-    /* TODO Introduce a new action by declaring a new method.
-    @Description("Greet current user")
+    /* TODO Introduce a new action by declaring a new method, public and no parameters.
+    @Action("Greet current user")
     public void hi() {
       System.out.printf("Hi %s!%n", System.getProperty("user.name", "Nobody"));
     }
     */
 
-    /* TODO Wrap something around existing an action by overriding it.
+    /* TODO Wrap something around existing an action by overriding and calling it.
     @Override
     public void build() {
       log("BEGIN");
@@ -36,6 +41,7 @@ sealed interface Duke {
     /* TODO Rewrite an action by overriding and not calling it.
     @Override
     public void test() {
+      log("test()");
       if (Math.random() < 0.5d) throw new RuntimeException("Test failed. Because.");
     }
     */
@@ -55,7 +61,7 @@ sealed interface Duke {
       this.settings = settings;
     }
 
-    @Description("Start standard workflow")
+    @Action("Start standard workflow")
     public void build() {
       log("build()");
       if (settings.rebuild()) clean();
@@ -64,22 +70,22 @@ sealed interface Duke {
       document();
     }
 
-    @Description("Delete all generated files")
+    @Action("Delete all generated files")
     public void clean() {
       log("clean()");
     }
 
-    @Description("Create Java archives from Java source files")
+    @Action("Create Java archives from Java source files")
     public void compile() {
       log("compile()");
     }
 
-    @Description("Launch automated checks")
+    @Action("Launch automated checks")
     public void test() {
       log("test()");
     }
 
-    @Description("Generate documentation assets")
+    @Action("Generate documentation assets")
     public void document() {
       log("document()");
     }
@@ -100,7 +106,7 @@ sealed interface Duke {
       super(logbook);
     }
 
-    @Description("Find a tool by its name and run it with an arbitrary amount of arguments")
+    @Action("Find a tool by its name and run it with an arbitrary amount of arguments")
     public void run(List<String> command) {
       run(ToolCall.of(command));
     }
@@ -186,29 +192,38 @@ sealed interface Duke {
       this.logbook = logbook;
     }
 
-    @Description("Print this help message text")
+    @Action("Print this help message text")
     public void help() {
       log("Usage: ... ");
+      // List available actions, grouped by their declaring class and sorted by name
       Class<?> current = getClass();
       while (!Object.class.equals(current)) {
-        var names =
+        var descriptions =
             Stream.of(current.getDeclaredMethods())
-                .filter(method -> method.isAnnotationPresent(Description.class))
-                .map(
-                    method ->
-                        method.getName() + " - " + method.getAnnotation(Description.class).value())
+                .filter(method -> method.isAnnotationPresent(Action.class))
+                .map(this::describe)
                 .sorted()
                 .toList();
-        if (!names.isEmpty()) {
-          System.out.println(current.getSimpleName());
-          names.forEach(name -> System.out.println("  " + name));
+        if (!descriptions.isEmpty()) {
+          log(current.getSimpleName());
+          descriptions.forEach(description -> log("  " + description));
         }
         current = current.getSuperclass();
       }
     }
 
+    protected String describe(Method method) {
+      return method.getName() + " - " + method.getAnnotation(Action.class).value();
+    }
+
     public void log(String message) {
       logbook.log(Level.INFO, message);
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Action {
+      String value();
     }
 
     record Logbook(Level threshold, PrintWriter out, PrintWriter err) {
