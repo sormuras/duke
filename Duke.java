@@ -10,12 +10,13 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.stream.Stream;
 
 /** An enhanced entry-point exploration. */
 sealed interface Duke {
 
-  /** Your configuration, your actions, your program. */
+  /** Your configuration, your types, your actions, your program. */
   final class Program extends BuildProgram implements Duke {
     /* TODO Introduce a new action by declaring a new method, public and no parameters.
     @Action("Greet current user")
@@ -24,7 +25,7 @@ sealed interface Duke {
     }
     */
 
-    /* TODO Wrap something around existing an action by overriding and calling it.
+    /* TODO Wrap something around an existing action by overriding and super-calling it.
     @Override
     public void build() {
       log("BEGIN");
@@ -47,6 +48,7 @@ sealed interface Duke {
     */
   }
 
+  /** Declares project-related types and actions. */
   class BuildProgram extends ToolProgram {
 
     final Settings settings;
@@ -61,7 +63,7 @@ sealed interface Duke {
       this.settings = settings;
     }
 
-    @Action("Start standard workflow")
+    @Action(description = "Start standard workflow")
     public void build() {
       log("build()");
       if (settings.rebuild()) clean();
@@ -70,22 +72,22 @@ sealed interface Duke {
       document();
     }
 
-    @Action("Delete all generated files")
+    @Action(description = "Delete all generated files")
     public void clean() {
       log("clean()");
     }
 
-    @Action("Create Java archives from Java source files")
+    @Action(description = "Create Java archives from Java source files")
     public void compile() {
       log("compile()");
     }
 
-    @Action("Launch automated checks")
+    @Action(description = "Launch automated checks")
     public void test() {
       log("test()");
     }
 
-    @Action("Generate documentation assets")
+    @Action(description = "Generate documentation assets")
     public void document() {
       log("document()");
     }
@@ -97,6 +99,7 @@ sealed interface Duke {
     }
   }
 
+  /** Declares tool-related types and actions */
   class ToolProgram extends JavaProgram {
     ToolProgram() {
       super();
@@ -106,7 +109,9 @@ sealed interface Duke {
       super(logbook);
     }
 
-    @Action("Find a tool by its name and run it with an arbitrary amount of arguments")
+    @Action(
+        description = "Find a tool by its name and run it with an arbitrary amount of arguments",
+        type = Action.Type.TERMINAL)
     public void run(List<String> command) {
       run(ToolCall.of(command));
     }
@@ -181,6 +186,7 @@ sealed interface Duke {
     }
   }
 
+  /** Declares common types and actions. */
   class JavaProgram {
     final Logbook logbook;
 
@@ -192,28 +198,34 @@ sealed interface Duke {
       this.logbook = logbook;
     }
 
-    @Action("Print this help message text")
+    @Action(description = "Print this help message text")
     public void help() {
-      log("Usage: ... ");
+      log("Usage: java Duke.java [chainable actions...] [terminal action [arguments...]]");
       // List available actions, grouped by their declaring class and sorted by name
       Class<?> current = getClass();
       while (!Object.class.equals(current)) {
-        var descriptions =
+        var actions =
             Stream.of(current.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(Action.class))
                 .map(this::describe)
                 .sorted()
                 .toList();
-        if (!descriptions.isEmpty()) {
-          log(current.getSimpleName());
-          descriptions.forEach(description -> log("  " + description));
+        if (!actions.isEmpty()) {
+          var s = actions.size() == 1 ? "" : "s";
+          log("%d action%s declared by %s".formatted(actions.size(), s, current.getSimpleName()));
+          actions.forEach(action -> log("  " + action));
         }
         current = current.getSuperclass();
       }
     }
 
     protected String describe(Method method) {
-      return method.getName() + " - " + method.getAnnotation(Action.class).value();
+      var action = method.getAnnotation(Action.class);
+      return new StringJoiner(" - ")
+          .add(method.getName())
+          .add(action.description())
+          .add(action.type().toString())
+          .toString();
     }
 
     public void log(String message) {
@@ -223,7 +235,14 @@ sealed interface Duke {
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @interface Action {
-      String value();
+      enum Type {
+        CHAINABLE,
+        TERMINAL
+      }
+
+      Type type() default Type.CHAINABLE;
+
+      String description();
     }
 
     record Logbook(Level threshold, PrintWriter out, PrintWriter err) {
@@ -243,6 +262,11 @@ sealed interface Duke {
     }
   }
 
+  /**
+   * Creates a program instance and performs actions on it.
+   *
+   * @param args the list of actions to perform
+   */
   static void main(String... args) {
     var arguments = new ArrayDeque<>(args.length == 0 ? Default.ARGUMENTS : List.of(args));
     try {
@@ -271,6 +295,9 @@ sealed interface Duke {
     }
   }
 
+  /**
+   * Declares default constants, most of can be set via system properties.
+   */
   interface Default {
     List<String> ARGUMENTS = List.of("help");
     String PROGRAM = property("program", null);
