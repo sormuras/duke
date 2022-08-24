@@ -5,6 +5,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -58,8 +62,8 @@ sealed interface Duke {
       this.settings = new Settings();
     }
 
-    BuildProgram(Logbook logbook, Settings settings) {
-      super(logbook);
+    BuildProgram(Logbook logbook, Browser browser, Settings settings) {
+      super(logbook, browser);
       this.settings = settings;
     }
 
@@ -105,8 +109,8 @@ sealed interface Duke {
       super();
     }
 
-    ToolProgram(Logbook logbook) {
-      super(logbook);
+    ToolProgram(Logbook logbook, Browser browser) {
+      super(logbook, browser);
     }
 
     @Action(
@@ -189,13 +193,15 @@ sealed interface Duke {
   /** Declares common types and actions. */
   class JavaProgram {
     final Logbook logbook;
+    final Browser browser;
 
     JavaProgram() {
-      this(new Logbook(Default.LOGBOOK_THRESHOLD));
+      this(new Logbook(Default.LOGBOOK_THRESHOLD), new Browser());
     }
 
-    JavaProgram(Logbook logbook) {
+    JavaProgram(Logbook logbook, Browser browser) {
       this.logbook = logbook;
+      this.browser = browser;
     }
 
     @Action(description = "Print this help message text")
@@ -217,6 +223,14 @@ sealed interface Duke {
         }
         current = current.getSuperclass();
       }
+    }
+
+    @Action(
+        description = "Transfer all bytes from source to target file",
+        type = Action.Type.TERMINAL)
+    public void load(URI source, Path target) throws Exception {
+      log("load(%s) to %s".formatted(source, target.toUri()));
+      browser.load(source, target);
     }
 
     protected String describe(Method method) {
@@ -245,6 +259,39 @@ sealed interface Duke {
       String description();
     }
 
+    record Browser(HttpClient client) {
+      Browser() {
+        this(HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build());
+      }
+
+      String read(URI source) throws Exception {
+        var request = HttpRequest.newBuilder(source).build();
+        return client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+      }
+
+      HttpResponse<Path> load(URI source, Path target) throws Exception {
+        if (target.toString().isBlank())
+          throw new IllegalArgumentException("Target must not blank");
+        var parent = target.getParent();
+        if (parent != null) Files.createDirectories(parent);
+        var request = HttpRequest.newBuilder(source).build();
+        var response = client.send(request, HttpResponse.BodyHandlers.ofFile(target));
+        if (response.statusCode() >= 400) {
+          Files.deleteIfExists(target);
+          throw new IllegalStateException(response.toString().indent(2).strip());
+        }
+        return response;
+      }
+
+      HttpResponse<?> head(URI source) throws Exception {
+        var request =
+            HttpRequest.newBuilder(source)
+                .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                .build();
+        return client.send(request, HttpResponse.BodyHandlers.discarding());
+      }
+    }
+
     record Logbook(Level threshold, PrintWriter out, PrintWriter err) {
       Logbook(Level threshold) {
         this(threshold, new PrintWriter(System.out, true), new PrintWriter(System.err, true));
@@ -267,37 +314,43 @@ sealed interface Duke {
    *
    * @param args the list of actions to perform
    */
-  static void main(String... args) {
+  static void main(String... args) throws Exception {
     var arguments = new ArrayDeque<>(args.length == 0 ? Default.ARGUMENTS : List.of(args));
-    try {
-      var program =
-          Default.PROGRAM == null
-              ? new Program()
-              : (BuildProgram)
-                  Class.forName(Default.PROGRAM.replace('.', '$'))
-                      .getDeclaredConstructor()
-                      .newInstance();
-      while (!arguments.isEmpty()) {
-        var argument = arguments.removeFirst();
-        switch (argument) {
-          case "build" -> program.build();
-          case "run", "!" -> {
-            program.run(arguments.stream().toList());
-            arguments.clear();
-            return;
-          }
-          case "help", "?" -> program.help();
-          default -> program.getClass().getMethod(argument).invoke(program);
+    var program =
+        Default.PROGRAM == null
+            ? new Program()
+            : (BuildProgram)
+                Class.forName(Default.PROGRAM.replace('.', '$'))
+                    .getDeclaredConstructor()
+                    .newInstance();
+    loop:
+    while (!arguments.isEmpty()) {
+      var argument = arguments.removeFirst();
+      switch (argument) {
+        case "build" -> program.build();
+        case "run", "!" -> {
+          program.run(arguments.stream().toList());
+          arguments.clear();
+          break loop;
         }
+        case "help", "?" -> program.help();
+        case "load" -> {
+          var source = URI.create(arguments.removeFirst());
+          var target =
+              arguments.isEmpty()
+                  ? Path.of(source.getPath()).normalize().getFileName()
+                  : Path.of(arguments.removeFirst()).normalize();
+          program.load(source, target);
+          break loop;
+        }
+        default -> program.getClass().getMethod(argument).invoke(program);
       }
-    } catch (ReflectiveOperationException exception) {
-      throw new RuntimeException(exception);
     }
+    if (arguments.isEmpty()) return;
+    program.logbook.log(Level.WARNING, "Unhandled arguments: " + arguments);
   }
 
-  /**
-   * Declares default constants, most of can be set via system properties.
-   */
+  /** Declares default constants, most of can be set via system properties. */
   interface Default {
     List<String> ARGUMENTS = List.of("help");
     String PROGRAM = property("program", null);

@@ -16,6 +16,7 @@ public class DukeLogbookTests {
       Greeter() {
         super(
             new Logbook(Level.ALL, new PrintWriter(out), new PrintWriter(err)),
+            new Browser(),
             new Settings(false));
       }
 
