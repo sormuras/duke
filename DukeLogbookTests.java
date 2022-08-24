@@ -12,12 +12,11 @@ public class DukeLogbookTests {
     var out = new StringWriter();
     var err = new StringWriter();
 
-    class Greeter extends Duke.BuildProgram {
+    class Greeter extends Duke.ToolProgram {
       Greeter() {
         super(
             new Logbook(Level.ALL, new PrintWriter(out), new PrintWriter(err)),
-            new Browser(),
-            new Settings(false));
+            new Browser());
       }
 
       void hi() {

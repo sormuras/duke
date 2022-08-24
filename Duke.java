@@ -21,9 +21,9 @@ import java.util.stream.Stream;
 sealed interface Duke {
 
   /** Your configuration, your types, your actions, your program. */
-  final class Program extends BuildProgram implements Duke {
+  final class Program extends ToolProgram implements Duke {
     /* TODO Introduce a new action by declaring a new method, public and no parameters.
-    @Action("Greet current user")
+    @Action(description = "Greet current user")
     public void hi() {
       System.out.printf("Hi %s!%n", System.getProperty("user.name", "Nobody"));
     }
@@ -31,76 +31,18 @@ sealed interface Duke {
 
     /* TODO Wrap something around an existing action by overriding and super-calling it.
     @Override
-    public void build() {
+    @Action(description = "BEGIN -> super.help() -> END.")
+    public void help() {
       log("BEGIN");
       try {
-        super.build();
+        super.help();
       } catch (Throwable throwable) {
-        logbook.log(Level.ERROR, "build() failed: " + throwable.getMessage());
+        logbook.log(Level.ERROR, "help() failed: " + throwable.getMessage());
         throw throwable;
       }
       log("END.");
     }
     */
-
-    /* TODO Rewrite an action by overriding and not calling it.
-    @Override
-    public void test() {
-      log("test()");
-      if (Math.random() < 0.5d) throw new RuntimeException("Test failed. Because.");
-    }
-    */
-  }
-
-  /** Declares project-related types and actions. */
-  class BuildProgram extends ToolProgram {
-
-    final Settings settings;
-
-    BuildProgram() {
-      super();
-      this.settings = new Settings();
-    }
-
-    BuildProgram(Logbook logbook, Browser browser, Settings settings) {
-      super(logbook, browser);
-      this.settings = settings;
-    }
-
-    @Action(description = "Start standard workflow")
-    public void build() {
-      log("build()");
-      if (settings.rebuild()) clean();
-      compile();
-      test();
-      document();
-    }
-
-    @Action(description = "Delete all generated files")
-    public void clean() {
-      log("clean()");
-    }
-
-    @Action(description = "Create Java archives from Java source files")
-    public void compile() {
-      log("compile()");
-    }
-
-    @Action(description = "Launch automated checks")
-    public void test() {
-      log("test()");
-    }
-
-    @Action(description = "Generate documentation assets")
-    public void document() {
-      log("document()");
-    }
-
-    record Settings(boolean rebuild) {
-      Settings() {
-        this(Default.FORCE_REBUILD);
-      }
-    }
   }
 
   /** Declares tool-related types and actions */
@@ -230,7 +172,8 @@ sealed interface Duke {
         type = Action.Type.TERMINAL)
     public void load(URI source, Path target) throws Exception {
       log("load(%s) to %s".formatted(source, target.toUri()));
-      browser.load(source, target);
+      var response = browser.load(source, target);
+      if (response.statusCode() >= 400) throw new RuntimeException(response.toString());
     }
 
     protected String describe(Method method) {
@@ -276,10 +219,7 @@ sealed interface Duke {
         if (parent != null) Files.createDirectories(parent);
         var request = HttpRequest.newBuilder(source).build();
         var response = client.send(request, HttpResponse.BodyHandlers.ofFile(target));
-        if (response.statusCode() >= 400) {
-          Files.deleteIfExists(target);
-          throw new IllegalStateException(response.toString().indent(2).strip());
-        }
+        if (response.statusCode() >= 400) Files.deleteIfExists(target);
         return response;
       }
 
@@ -319,12 +259,11 @@ sealed interface Duke {
     var program =
         Default.PROGRAM.isBlank()
             ? new Program()
-            : (BuildProgram) Class.forName(Default.PROGRAM).getDeclaredConstructor().newInstance();
+            : (ToolProgram) Class.forName(Default.PROGRAM).getDeclaredConstructor().newInstance();
     loop:
     while (!arguments.isEmpty()) {
       var argument = arguments.removeFirst();
       switch (argument) {
-        case "build" -> program.build();
         case "run", "!" -> {
           program.run(arguments.stream().toList());
           arguments.clear();
@@ -352,7 +291,6 @@ sealed interface Duke {
     List<String> ARGUMENTS = List.of("help");
     String PROGRAM = property("program", "").replace('.', '$');
     Level LOGBOOK_THRESHOLD = Level.valueOf(property("logbook-threshold", "INFO"));
-    boolean FORCE_REBUILD = Boolean.parseBoolean(property("force-rebuild", "false"));
 
     private static String property(String key, String def) {
       return System.getProperty(("-Duke-" + key).substring(2), def);
