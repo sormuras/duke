@@ -317,12 +317,9 @@ sealed interface Duke {
   static void main(String... args) throws Exception {
     var arguments = new ArrayDeque<>(args.length == 0 ? Default.ARGUMENTS : List.of(args));
     var program =
-        Default.PROGRAM == null
+        Default.PROGRAM.isBlank()
             ? new Program()
-            : (BuildProgram)
-                Class.forName(Default.PROGRAM.replace('.', '$'))
-                    .getDeclaredConstructor()
-                    .newInstance();
+            : (BuildProgram) Class.forName(Default.PROGRAM).getDeclaredConstructor().newInstance();
     loop:
     while (!arguments.isEmpty()) {
       var argument = arguments.removeFirst();
@@ -353,7 +350,7 @@ sealed interface Duke {
   /** Declares default constants, most of can be set via system properties. */
   interface Default {
     List<String> ARGUMENTS = List.of("help");
-    String PROGRAM = property("program", null);
+    String PROGRAM = property("program", "").replace('.', '$');
     Level LOGBOOK_THRESHOLD = Level.valueOf(property("logbook-threshold", "INFO"));
     boolean FORCE_REBUILD = Boolean.parseBoolean(property("force-rebuild", "false"));
 
