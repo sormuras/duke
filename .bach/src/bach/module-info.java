@@ -10,4 +10,5 @@ module bach {
 
   uses bach.Bach.Creator;
   uses bach.Bach.Operator;
+  uses java.util.spi.ToolProvider;
 }
