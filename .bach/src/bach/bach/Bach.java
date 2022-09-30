@@ -44,36 +44,6 @@ public final class Bach implements ToolProvider {
     }
   }
 
-  public sealed interface Action {
-    String name();
-
-    void run(API api, List<String> arguments);
-
-    static Action of(Operator operator) {
-      return new BachOperatorAction(operator.name(), operator);
-    }
-
-    static Action of(ToolProvider provider) {
-      return new ToolProviderAction(provider.name(), provider);
-    }
-
-    record ToolProviderAction(String name, ToolProvider provider) implements Action {
-      @Override
-      public void run(API api, List<String> arguments) {
-        provider.run(api.printer().out(), api.printer().err(), arguments.toArray(String[]::new));
-      }
-    }
-
-    record BachOperatorAction(String name, Operator operator) implements Action {
-      @Override
-      public void run(API api, List<String> arguments) {
-        operator.operate(api, arguments);
-      }
-    }
-  }
-
-  public record Actions(List<Action> list) {}
-
   public interface API {
     Actions actions();
 
@@ -133,6 +103,36 @@ public final class Bach implements ToolProvider {
       out.println(string);
     }
   }
+
+  public sealed interface Action {
+    String name();
+
+    void run(API api, List<String> arguments);
+
+    static Action of(Operator operator) {
+      return new BachOperatorAction(operator.name(), operator);
+    }
+
+    static Action of(ToolProvider provider) {
+      return new ToolProviderAction(provider.name(), provider);
+    }
+
+    record ToolProviderAction(String name, ToolProvider provider) implements Action {
+      @Override
+      public void run(API api, List<String> arguments) {
+        provider.run(api.printer().out(), api.printer().err(), arguments.toArray(String[]::new));
+      }
+    }
+
+    record BachOperatorAction(String name, Operator operator) implements Action {
+      @Override
+      public void run(API api, List<String> arguments) {
+        operator.operate(api, arguments);
+      }
+    }
+  }
+
+  public record Actions(List<Action> list) {}
 
   @FunctionalInterface
   public interface Creator {
