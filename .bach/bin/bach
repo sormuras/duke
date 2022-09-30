@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+java `dirname -- "$0"`/bach.java "$@"
+exit $?
