@@ -1,6 +1,7 @@
 package bach.info;
 
 import bach.Bach;
+import java.util.List;
 
 public class ProjectLocalOperator implements Bach.Operator {
   @Override
@@ -9,7 +10,7 @@ public class ProjectLocalOperator implements Bach.Operator {
   }
 
   @Override
-  public void operate(Bach.API bach, String... args) {
+  public void operate(Bach.API bach, List<String> arguments) {
     bach.printer().out("OPERATOR!");
   }
 }

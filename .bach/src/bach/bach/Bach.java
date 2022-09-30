@@ -47,6 +47,8 @@ public final class Bach implements ToolProvider {
   public sealed interface Action {
     String name();
 
+    void run(API api, List<String> arguments);
+
     static Action of(Operator operator) {
       return new BachOperatorAction(operator.name(), operator);
     }
@@ -55,9 +57,19 @@ public final class Bach implements ToolProvider {
       return new ToolProviderAction(provider.name(), provider);
     }
 
-    record ToolProviderAction(String name, ToolProvider provider) implements Action {}
+    record ToolProviderAction(String name, ToolProvider provider) implements Action {
+      @Override
+      public void run(API api, List<String> arguments) {
+        provider.run(api.printer().out(), api.printer().err(), arguments.toArray(String[]::new));
+      }
+    }
 
-    record BachOperatorAction(String name, Operator operator) implements Action {}
+    record BachOperatorAction(String name, Operator operator) implements Action {
+      @Override
+      public void run(API api, List<String> arguments) {
+        operator.operate(api, arguments);
+      }
+    }
   }
 
   public record Actions(List<Action> list) {}
@@ -80,15 +92,7 @@ public final class Bach implements ToolProvider {
       var action = actions().list().stream().filter(a -> a.name().equals(name)).findFirst();
       if (action.isEmpty()) throw new UnsupportedOperationException(name);
 
-      if (action.get() instanceof Action.ToolProviderAction tool) {
-        tool.provider().run(printer.out, printer.err, arguments.toArray(String[]::new));
-        return;
-      }
-      if (action.get() instanceof Action.BachOperatorAction operator) {
-        operator.operator().operate(this, arguments.toArray(String[]::new));
-        return;
-      }
-      throw new IllegalStateException(action.toString());
+      action.get().run(this, arguments.stream().toList());
     }
 
     static API of(Printer printer) {
@@ -137,7 +141,7 @@ public final class Bach implements ToolProvider {
 
   @FunctionalInterface
   public interface Operator {
-    void operate(API api, String... args);
+    void operate(API api, List<String> arguments);
 
     default String name() {
       return getClass().getSimpleName();
@@ -151,8 +155,7 @@ public final class Bach implements ToolProvider {
       }
 
       @Override
-      public void operate(API api, String... args) {
-        var arguments = List.of(args);
+      public void operate(API api, List<String> arguments) {
         if (arguments.isEmpty() || arguments.contains("actions")) {
           api.actions().list().stream().map(Action::name).sorted().forEach(api.printer()::out);
         }
