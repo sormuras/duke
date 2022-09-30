@@ -47,6 +47,14 @@ public final class Bach implements ToolProvider {
   public sealed interface Action {
     String name();
 
+    static Action of(Operator operator) {
+      return new BachOperatorAction(operator.name(), operator);
+    }
+
+    static Action of(ToolProvider provider) {
+      return new ToolProviderAction(provider.name(), provider);
+    }
+
     record ToolProviderAction(String name, ToolProvider provider) implements Action {}
 
     record BachOperatorAction(String name, Operator operator) implements Action {}
@@ -100,13 +108,8 @@ public final class Bach implements ToolProvider {
 
     protected Actions createActions() {
       var actions = new ArrayList<Action>();
-      ServiceLoader.load(ToolProvider.class).stream()
-          .map(ServiceLoader.Provider::get)
-          .forEach(
-              provider -> actions.add(new Action.ToolProviderAction(provider.name(), provider)));
-      Operator.findAll()
-          .forEach(
-              operator -> actions.add(new Action.BachOperatorAction(operator.name(), operator)));
+      ServiceLoader.load(ToolProvider.class).forEach(tool -> actions.add(Action.of(tool)));
+      ServiceLoader.load(Operator.class).forEach(operator -> actions.add(Action.of(operator)));
       return new Actions(List.copyOf(actions));
     }
 
@@ -138,10 +141,6 @@ public final class Bach implements ToolProvider {
 
     default String name() {
       return getClass().getSimpleName();
-    }
-
-    static List<Operator> findAll() {
-      return ServiceLoader.load(Operator.class).stream().map(ServiceLoader.Provider::get).toList();
     }
   }
 
