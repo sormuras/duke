@@ -57,6 +57,20 @@ public final class Bach implements ToolProvider {
       var arguments = new ArrayDeque<>(command);
       var name = arguments.removeFirst();
 
+      if (name.equals("--list-tools")) {
+        ServiceLoader.load(ToolProvider.class).stream()
+            .map(ServiceLoader.Provider::get)
+            .map(ToolProvider::name)
+            .sorted()
+            .forEach(printer::out);
+        return;
+      }
+
+      if (name.equals("--list-operators")) {
+        Operator.findAll().stream().map(Operator::name).sorted().forEach(printer::out);
+        return;
+      }
+
       var tool = ToolProvider.findFirst(name);
       if (tool.isPresent()) {
         tool.get().run(printer.out, printer.err, arguments.toArray(String[]::new));
@@ -65,8 +79,8 @@ public final class Bach implements ToolProvider {
 
       var operator = Operator.findFirst(name);
       if (operator.isPresent()) {
-          operator.get().operate(this, arguments.toArray(String[]::new));
-          return;
+        operator.get().operate(this, arguments.toArray(String[]::new));
+        return;
       }
 
       throw new UnsupportedOperationException(name);
@@ -110,11 +124,12 @@ public final class Bach implements ToolProvider {
       return getClass().getSimpleName();
     }
 
+    static List<Operator> findAll() {
+      return ServiceLoader.load(Operator.class).stream().map(ServiceLoader.Provider::get).toList();
+    }
+
     static Optional<Operator> findFirst(String name) {
-      return ServiceLoader.load(Operator.class).stream()
-              .map(ServiceLoader.Provider::get)
-              .filter(operator -> operator.name().equals(name))
-              .findFirst();
+      return findAll().stream().filter(operator -> operator.name().equals(name)).findFirst();
     }
   }
 }
