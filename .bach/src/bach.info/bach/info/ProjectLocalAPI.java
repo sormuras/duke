@@ -3,7 +3,7 @@ package bach.info;
 import bach.Bach;
 
 class ProjectLocalAPI extends Bach.DefaultAPI {
-  ProjectLocalAPI(Bach.Printer printer) {
-    super(printer);
+  ProjectLocalAPI(Bach.Configuration configuration) {
+    super(configuration);
   }
 }

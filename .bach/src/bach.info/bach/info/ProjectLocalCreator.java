@@ -4,7 +4,7 @@ import bach.Bach;
 
 public class ProjectLocalCreator implements Bach.Creator {
   @Override
-  public Bach.API create(Bach.Printer printer) {
-    return new ProjectLocalAPI(printer);
+  public Bach.API createBach(Bach.Configuration configuration) {
+    return new ProjectLocalAPI(configuration);
   }
 }

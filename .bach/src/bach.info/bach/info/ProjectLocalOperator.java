@@ -11,6 +11,6 @@ public class ProjectLocalOperator implements Bach.Operator {
 
   @Override
   public void operate(Bach.API bach, List<String> arguments) {
-    bach.printer().out("OPERATOR!");
+    bach.info("OPERATOR!");
   }
 }
