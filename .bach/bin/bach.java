@@ -5,22 +5,35 @@ import java.util.StringJoiner;
 import java.util.spi.ToolProvider;
 
 interface bach {
-
   static void main(String... args) throws Exception {
-    var sources = Path.of(".bach", "src");
-    if (!Files.isDirectory(sources)) throw new RuntimeException("No sources found: " + sources);
-    var classes = Path.of(".bach", "out", ".bach", "classes-" + Runtime.version().feature());
-    var modules = modules(sources);
-    run("javac", "--module=" + modules, "--module-source-path=" + sources, "-d", classes.toString());
-    var process = new ProcessBuilder("java", "--module-path=" + classes);
-    process.command().add("--module");
-    process.command().add("bach/bach.Bach");
-    process.command().addAll(List.of(args));
-    var code = process.inheritIO().start().waitFor();
+    var sources = acquireBachSources();
+    var modules = compileBachModules(sources);
+    var code = runBachTool(modules, args);
     if (code != 0) System.exit(code);
   }
 
-  static String modules(Path sources) {
+  static Path acquireBachSources() {
+    var sources = Path.of(".bach/src");
+    if (!Files.isDirectory(sources)) throw new RuntimeException("No sources found: " + sources);
+    return sources;
+  }
+
+  static Path compileBachModules(Path sources) {
+    var classes = Path.of(".bach/out/.bach/classes-" + Runtime.version().feature());
+    var module = module(sources);
+    run("javac", "--module=" + module, "--module-source-path=" + sources, "-d", classes.toString());
+    return classes;
+  }
+
+  static int runBachTool(Path modules, String... args) throws Exception {
+    var process = new ProcessBuilder("java", "--module-path", modules.toString());
+    process.command().add("--module");
+    process.command().add("bach/bach.Bach");
+    process.command().addAll(List.of(args));
+    return process.inheritIO().start().waitFor();
+  }
+
+  static String module(Path sources) {
     try (var stream = Files.newDirectoryStream(sources, Files::isDirectory)) {
       var joiner = new StringJoiner(",");
       stream.forEach(dir -> joiner.add(dir.getFileName().toString()));
