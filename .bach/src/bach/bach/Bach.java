@@ -2,8 +2,8 @@ package bach;
 
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.spi.ToolProvider;
 
@@ -44,7 +44,19 @@ public final class Bach implements ToolProvider {
     }
   }
 
+  public sealed interface Action {
+    String name();
+
+    record ToolProviderAction(String name, ToolProvider provider) implements Action {}
+
+    record BachOperatorAction(String name, Operator operator) implements Action {}
+  }
+
+  public record Actions(List<Action> list) {}
+
   public interface API {
+    Actions actions();
+
     Printer printer();
 
     default void run(String... args) {
@@ -57,33 +69,18 @@ public final class Bach implements ToolProvider {
       var arguments = new ArrayDeque<>(command);
       var name = arguments.removeFirst();
 
-      if (name.equals("--list-tools")) {
-        ServiceLoader.load(ToolProvider.class).stream()
-            .map(ServiceLoader.Provider::get)
-            .map(ToolProvider::name)
-            .sorted()
-            .forEach(printer::out);
+      var action = actions().list().stream().filter(a -> a.name().equals(name)).findFirst();
+      if (action.isEmpty()) throw new UnsupportedOperationException(name);
+
+      if (action.get() instanceof Action.ToolProviderAction tool) {
+        tool.provider().run(printer.out, printer.err, arguments.toArray(String[]::new));
         return;
       }
-
-      if (name.equals("--list-operators")) {
-        Operator.findAll().stream().map(Operator::name).sorted().forEach(printer::out);
+      if (action.get() instanceof Action.BachOperatorAction operator) {
+        operator.operator().operate(this, arguments.toArray(String[]::new));
         return;
       }
-
-      var tool = ToolProvider.findFirst(name);
-      if (tool.isPresent()) {
-        tool.get().run(printer.out, printer.err, arguments.toArray(String[]::new));
-        return;
-      }
-
-      var operator = Operator.findFirst(name);
-      if (operator.isPresent()) {
-        operator.get().operate(this, arguments.toArray(String[]::new));
-        return;
-      }
-
-      throw new UnsupportedOperationException(name);
+      throw new IllegalStateException(action.toString());
     }
 
     static API of(Printer printer) {
@@ -93,10 +90,29 @@ public final class Bach implements ToolProvider {
 
   public static class DefaultAPI implements API {
 
+    protected final Actions actions;
     protected final Printer printer;
 
     public DefaultAPI(Printer printer) {
       this.printer = printer;
+      this.actions = createActions();
+    }
+
+    protected Actions createActions() {
+      var actions = new ArrayList<Action>();
+      ServiceLoader.load(ToolProvider.class).stream()
+          .map(ServiceLoader.Provider::get)
+          .forEach(
+              provider -> actions.add(new Action.ToolProviderAction(provider.name(), provider)));
+      Operator.findAll()
+          .forEach(
+              operator -> actions.add(new Action.BachOperatorAction(operator.name(), operator)));
+      return new Actions(List.copyOf(actions));
+    }
+
+    @Override
+    public Actions actions() {
+      return actions;
     }
 
     @Override
@@ -127,9 +143,21 @@ public final class Bach implements ToolProvider {
     static List<Operator> findAll() {
       return ServiceLoader.load(Operator.class).stream().map(ServiceLoader.Provider::get).toList();
     }
+  }
 
-    static Optional<Operator> findFirst(String name) {
-      return findAll().stream().filter(operator -> operator.name().equals(name)).findFirst();
+  public interface Operators {
+    record ListOperator(String name) implements Operator {
+      public ListOperator() {
+        this("list");
+      }
+
+      @Override
+      public void operate(API api, String... args) {
+        var arguments = List.of(args);
+        if (arguments.isEmpty() || arguments.contains("actions")) {
+          api.actions().list().stream().map(Action::name).sorted().forEach(api.printer()::out);
+        }
+      }
     }
   }
 }
