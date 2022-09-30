@@ -7,8 +7,9 @@ import java.util.spi.ToolProvider;
 interface bach {
 
   static void main(String... args) throws Exception {
-    var sources = Path.of(".bach/src");
-    var classes = Path.of(".bach/out/.bach/classes");
+    var sources = Path.of(".bach", "src");
+    if (!Files.isDirectory(sources)) throw new RuntimeException("No sources found: " + sources);
+    var classes = Path.of(".bach", "out", ".bach", "classes-" + Runtime.version().feature());
     var modules = modules(sources);
     run("javac", "--module=" + modules, "--module-source-path=" + sources, "-d", classes.toString());
     var process = new ProcessBuilder("java", "--module-path=" + classes);
