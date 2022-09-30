@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.spi.ToolProvider;
 
-public final class Bach implements ToolProvider {
+public record Bach(String name) implements ToolProvider {
 
   public static final String VERSION = "2022.09.30";
 
@@ -22,11 +22,8 @@ public final class Bach implements ToolProvider {
     return bach.run(out, err, args);
   }
 
-  public Bach() {}
-
-  @Override
-  public String name() {
-    return "bach";
+  public Bach() {
+    this("bach");
   }
 
   @Override
