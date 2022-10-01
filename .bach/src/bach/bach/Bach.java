@@ -41,8 +41,10 @@ public record Bach(String name) implements ToolProvider {
     try {
       var configuration = new Configuration(out, err).withParsingCommandLineArguments(args);
       var verbose = configuration.verbose();
-      if (verbose) {
+      var version = configuration.version();
+      if (verbose || version) {
         out.println("Bach " + VERSION);
+        if (version) return 0;
         out.println(configuration.toString(0));
       }
       var bach = API.of(configuration);
@@ -79,6 +81,7 @@ public record Bach(String name) implements ToolProvider {
       Printer printer,
       Optional<Boolean> __help,
       Optional<Boolean> __verbose,
+      Optional<Boolean> __version,
       Optional<String> __printer_threshold,
       Optional<String> __project_directory,
       List<Call> calls) {
@@ -107,6 +110,7 @@ public record Bach(String name) implements ToolProvider {
           Optional.empty(),
           Optional.empty(),
           Optional.empty(),
+          Optional.empty(),
           List.of());
     }
 
@@ -116,6 +120,10 @@ public record Bach(String name) implements ToolProvider {
 
     public boolean verbose() {
       return __verbose.orElse(false);
+    }
+
+    public boolean version() {
+      return __version.orElse(false);
     }
 
     public System.Logger.Level printerThreshold() {
@@ -132,6 +140,7 @@ public record Bach(String name) implements ToolProvider {
       joiner.add("<options>");
       joiner.add("  --help = " + help());
       joiner.add("  --verbose = " + verbose());
+      joiner.add("  --version = " + version());
       joiner.add("  --printer-threshold = " + printerThreshold());
       joiner.add("  --project-directory = " + projectDirectory().toUri());
       joiner.add("<calls>");
@@ -145,6 +154,7 @@ public record Bach(String name) implements ToolProvider {
       // extract components
       var help = __help.orElse(null);
       var verbose = __verbose.orElse(null);
+      var version = __verbose.orElse(null);
       var printerThreshold = __printer_threshold.orElse(null);
       var projectDirectory = __project_directory.orElse(null);
       var calls = new ArrayList<>(calls());
@@ -158,6 +168,10 @@ public record Bach(String name) implements ToolProvider {
           }
           if (argument.equals("--verbose")) {
             verbose = Boolean.TRUE;
+            continue;
+          }
+          if (argument.equals("--version")) {
+            version = Boolean.TRUE;
             continue;
           }
         }
@@ -196,6 +210,7 @@ public record Bach(String name) implements ToolProvider {
           printer,
           Optional.ofNullable(help),
           Optional.ofNullable(verbose),
+          Optional.ofNullable(version),
           Optional.ofNullable(printerThreshold),
           Optional.ofNullable(projectDirectory),
           List.copyOf(calls));
