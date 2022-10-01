@@ -9,6 +9,16 @@ class ProjectLocalImplementation extends DefaultImplementation {
   }
 
   @Override
+  protected Browser createBrowser() {
+    return super.createBrowser();
+  }
+
+  @Override
+  protected Paths createPaths() {
+    return super.createPaths();
+  }
+
+  @Override
   protected Toolbox createToolbox() {
     return super.createToolbox();
   }

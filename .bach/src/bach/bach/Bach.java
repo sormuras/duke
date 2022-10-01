@@ -495,10 +495,10 @@ public record Bach(String name) implements ToolProvider {
     }
 
     non-sealed class DefaultImplementation implements API {
-      protected final Configuration configuration;
-      protected final Paths paths;
-      protected final Browser browser;
-      protected final Toolbox toolbox;
+      private final Configuration configuration;
+      private final Paths paths;
+      private final Browser browser;
+      private final Toolbox toolbox;
 
       public DefaultImplementation(Configuration configuration) {
         this.configuration = configuration;
@@ -511,7 +511,7 @@ public record Bach(String name) implements ToolProvider {
         return new Browser();
       }
 
-      private Paths createPaths() {
+      protected Paths createPaths() {
         return Paths.ofRoot(configuration.projectDirectory());
       }
 
@@ -528,22 +528,22 @@ public record Bach(String name) implements ToolProvider {
       }
 
       @Override
-      public Configuration configuration() {
+      public final Configuration configuration() {
         return configuration;
       }
 
       @Override
-      public Paths paths() {
+      public final Paths paths() {
         return paths;
       }
 
       @Override
-      public Browser browser() {
+      public final Browser browser() {
         return browser;
       }
 
       @Override
-      public Toolbox toolbox() {
+      public final Toolbox toolbox() {
         return toolbox;
       }
 
