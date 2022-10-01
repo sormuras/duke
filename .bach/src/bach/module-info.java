@@ -9,10 +9,10 @@ module bach {
   exports bach;
 
   uses bach.Bach.Configuration.Creator;
-  uses bach.Bach.Operator;
+  uses bach.Bach.API.Operator;
   uses java.util.spi.ToolProvider;
 
-  provides bach.Bach.Operator with
-      bach.Bach.Operators.JarOperator,
-      bach.Bach.Operators.ListOperator;
+  provides bach.Bach.API.Operator with
+      bach.Bach.DefaultAPI.JarOperator,
+      bach.Bach.DefaultAPI.ListOperator;
 }

@@ -1,7 +1,7 @@
 package bach.info;
 
 import bach.Bach.API;
-import bach.Bach.Operator;
+import bach.Bach.API.Operator;
 
 import java.util.List;
 

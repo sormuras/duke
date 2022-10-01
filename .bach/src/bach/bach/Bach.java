@@ -195,6 +195,15 @@ public record Bach(String name) implements ToolProvider {
   }
 
   public interface API {
+    @FunctionalInterface
+    interface Operator {
+      void operate(API bach, List<String> arguments);
+
+      default String name() {
+        return getClass().getSimpleName();
+      }
+    }
+
     Configuration configuration();
 
     Tasks tasks();
@@ -233,7 +242,7 @@ public record Bach(String name) implements ToolProvider {
 
     protected Tasks createActions() {
       var actions = new ArrayList<Task>();
-      ServiceLoader.load(Operator.class).forEach(operator -> actions.add(Task.of(operator)));
+      ServiceLoader.load(API.Operator.class).forEach(operator -> actions.add(Task.of(operator)));
       ServiceLoader.load(ToolProvider.class).forEach(tool -> actions.add(Task.of(tool)));
       return new Tasks(List.copyOf(actions));
     }
@@ -246,6 +255,36 @@ public record Bach(String name) implements ToolProvider {
     @Override
     public Configuration configuration() {
       return configuration;
+    }
+
+    public record JarOperator(String name) implements Operator {
+      public JarOperator() {
+        this("jar");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        bach.info("BEGIN");
+        bach.run("jdk.jartool/jar", arguments);
+        bach.info("END");
+      }
+    }
+
+    public record ListOperator(String name) implements Operator {
+      public ListOperator() {
+        this("list");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (Configuration.isFirstArgumentHelpOptionName(arguments)) {
+          bach.info("Usage: bach list ?|tasks|...");
+          return;
+        }
+        if (arguments.isEmpty() || arguments.contains("tasks")) {
+          bach.info(bach.tasks().toString(0));
+        }
+      }
     }
   }
 
@@ -263,7 +302,7 @@ public record Bach(String name) implements ToolProvider {
 
     void run(API api, List<String> arguments);
 
-    static Task of(Operator operator) {
+    static Task of(API.Operator operator) {
       return new BachOperatorTask(prefixIfNeeded(operator.name(), operator), operator);
     }
 
@@ -286,7 +325,7 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
-    record BachOperatorTask(String name, Operator operator) implements Task {
+    record BachOperatorTask(String name, API.Operator operator) implements Task {
       @Override
       public void run(API api, List<String> arguments) {
         operator.operate(api, arguments);
@@ -316,47 +355,6 @@ public record Bach(String name) implements ToolProvider {
         joiner.add(String.format(format, entry.getKey(), names));
       }
       return joiner.toString().indent(indent).stripTrailing();
-    }
-  }
-
-  @FunctionalInterface
-  public interface Operator {
-    void operate(API bach, List<String> arguments);
-
-    default String name() {
-      return getClass().getSimpleName();
-    }
-  }
-
-  public interface Operators {
-    record JarOperator(String name) implements Operator {
-      public JarOperator() {
-        this("jar");
-      }
-
-      @Override
-      public void operate(API bach, List<String> arguments) {
-        bach.info("BEGIN");
-        bach.run("jdk.jartool/jar", arguments);
-        bach.info("END");
-      }
-    }
-
-    record ListOperator(String name) implements Operator {
-      public ListOperator() {
-        this("list");
-      }
-
-      @Override
-      public void operate(API bach, List<String> arguments) {
-        if (Configuration.isFirstArgumentHelpOptionName(arguments)) {
-          bach.info("Usage: bach list ?|tasks|...");
-          return;
-        }
-        if (arguments.isEmpty() || arguments.contains("tasks")) {
-          bach.info(bach.tasks().toString(0));
-        }
-      }
     }
   }
 }
