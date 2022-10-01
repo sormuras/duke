@@ -1,4 +1,5 @@
 import bach.Bach.API.*;
+import bach.Bach.Browsing.*;
 import java.util.spi.ToolProvider;
 
 /** Defines Bach's API. */
@@ -14,13 +15,17 @@ module bach {
   exports bach;
 
   uses Creator;
+  uses Locator;
   uses Operator;
   uses ToolProvider;
 
   provides Operator with
       LoadFileOperator,
       LoadHeadOperator,
+      LoadMissingModulesOperator,
+      LoadModuleOperator,
       LoadTextOperator,
+      ListLocatorsOperator,
       ListPathsOperator,
       ListModulesOperator,
       ListToolsOperator;

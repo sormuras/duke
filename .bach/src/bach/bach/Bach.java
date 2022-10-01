@@ -289,7 +289,7 @@ public record Bach(String name) implements ToolProvider {
       static void consumeAllNames(ModuleFinder finder, Consumer<String> consumer) {
         finder.findAll().stream()
             .map(ModuleReference::descriptor)
-            .map(ModuleDescriptor::name)
+            .map(ModuleDescriptor::toNameAndVersion)
             .sorted()
             .map(string -> string.indent(2).stripTrailing())
             .forEach(consumer);
@@ -379,6 +379,62 @@ public record Bach(String name) implements ToolProvider {
         } catch (Exception exception) {
           throw new RuntimeException(exception);
         }
+      }
+    }
+
+    record LoadModuleOperator(String name) implements API.Operator {
+      public LoadModuleOperator() {
+        this("load-module");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<module-names...>")) return;
+        var externals = bach.paths().externalModules();
+        with_next_module:
+        for (var module : arguments) {
+          if (ModuleFinder.of(externals).find(module).isPresent()) {
+            bach.debug("Already");
+            continue; // with next module
+          }
+          for (var locator : bach.locators().list()) {
+            var location = locator.locate(module);
+            if (location == null) continue; // with next locator
+            bach.debug("Module %s located via %s".formatted(module, locator.description()));
+            var source = URI.create(location);
+            var target = externals.resolve(module + ".jar");
+            bach.browser().load(source, target);
+            continue with_next_module;
+          }
+          throw new RuntimeException("Module not locatable: " + module);
+        }
+      }
+    }
+
+    record LoadMissingModulesOperator(String name) implements API.Operator {
+      public LoadMissingModulesOperator() {
+        this("load-missing-modules");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<more-missing-module-names...>")) return;
+        var externals = bach.paths().externalModules();
+        var loaded = new TreeSet<String>();
+        var difference = new TreeSet<String>();
+        while (true) {
+          var finders = List.of(ModuleFinder.of(externals)); // recreate in every loop
+          var missing = ModulesSupport.listMissingNames(finders, Set.copyOf(arguments));
+          if (missing.isEmpty()) break;
+          bach.debug(
+              "Load %d missing module%s".formatted(missing.size(), missing.size() == 1 ? "" : "s"));
+          difference.retainAll(missing);
+          if (!difference.isEmpty()) throw new Error("Still missing?! " + difference);
+          difference.addAll(missing);
+          bach.run("load-module", missing);
+          loaded.addAll(missing);
+        }
+        bach.debug("Loaded %d module%s".formatted(loaded.size(), loaded.size() == 1 ? "" : "s"));
       }
     }
   }
@@ -494,21 +550,31 @@ public record Bach(String name) implements ToolProvider {
           .createBach(configuration);
     }
 
+    Locators locators();
+
     non-sealed class DefaultImplementation implements API {
       private final Configuration configuration;
       private final Paths paths;
       private final Browser browser;
+      private final Locators locators;
       private final Toolbox toolbox;
 
       public DefaultImplementation(Configuration configuration) {
         this.configuration = configuration;
         this.paths = createPaths();
         this.browser = createBrowser();
+        this.locators = createLocators();
         this.toolbox = createToolbox();
       }
 
       protected Browser createBrowser() {
         return new Browser();
+      }
+
+      protected Locators createLocators() {
+        var locators = new ArrayList<Locator>();
+        ServiceLoader.load(API.Locator.class).forEach(locators::add);
+        return new Locators(List.copyOf(locators));
       }
 
       protected Paths createPaths() {
@@ -543,6 +609,11 @@ public record Bach(String name) implements ToolProvider {
       }
 
       @Override
+      public final Locators locators() {
+        return locators;
+      }
+
+      @Override
       public final Toolbox toolbox() {
         return toolbox;
       }
@@ -557,6 +628,24 @@ public record Bach(String name) implements ToolProvider {
     @FunctionalInterface
     interface Creator {
       API createBach(Configuration configuration);
+    }
+
+    /** An external module locator links module names to their remote locations. */
+    interface Locator {
+      String locate(String name);
+
+      default String description() {
+        return getClass().getSimpleName();
+      }
+    }
+
+    record Locators(List<Locator> list) {
+      public String toString(int indent) {
+        var joiner = new StringJoiner("\n");
+        list.forEach(locator -> joiner.add(locator.description()));
+        joiner.add("    %d locator%s".formatted(list.size(), list.size() == 1 ? "" : "s"));
+        return joiner.toString().indent(indent).stripTrailing();
+      }
     }
 
     @FunctionalInterface
@@ -594,6 +683,17 @@ public record Bach(String name) implements ToolProvider {
           exception.printStackTrace(err);
           return 1;
         }
+      }
+    }
+
+    record ListLocatorsOperator(String name) implements Operator {
+      public ListLocatorsOperator() {
+        this("list-locators");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        bach.info(bach.locators().toString(0));
       }
     }
 
@@ -638,7 +738,8 @@ public record Bach(String name) implements ToolProvider {
         bach.info("    %d external modules".formatted(externalModules.size()));
 
         bach.info("## Missing external modules");
-        var missingModules = ModulesSupport.listMissingNames(List.of(externalModuleFinder), Set.of());
+        var missingModules =
+            ModulesSupport.listMissingNames(List.of(externalModuleFinder), Set.of());
         missingModules.forEach(bach::info);
         bach.info("    %d missing external modules".formatted(missingModules.size()));
 

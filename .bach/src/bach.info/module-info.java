@@ -7,6 +7,8 @@ module bach.info {
 
   provides Creator with
       ProjectLocalCreator;
+  provides Locator with
+      JUnitLocator;
   provides Operator with
       ProjectLocalJarOperator,
       ProjectLocalOperator;

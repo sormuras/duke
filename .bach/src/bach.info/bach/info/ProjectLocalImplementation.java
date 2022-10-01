@@ -14,6 +14,11 @@ class ProjectLocalImplementation extends DefaultImplementation {
   }
 
   @Override
+  protected Locators createLocators() {
+    return super.createLocators();
+  }
+
+  @Override
   protected Paths createPaths() {
     return super.createPaths();
   }
