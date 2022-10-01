@@ -1,13 +1,4 @@
-import bach.Bach;
-import bach.Bach.API.ListFilesTool;
-import bach.Bach.API.ListToolsOperator;
-import bach.Bach.API.LoadFileOperator;
-import bach.Bach.API.LoadHeadOperator;
-import bach.Bach.API.LoadTextOperator;
-import bach.Bach.API.Operator;
-import bach.Bach.API.TreeCreateTool;
-import bach.Bach.API.TreeDeleteTool;
-import bach.Bach.API.TreeTool;
+import bach.Bach.API.*;
 import bach.Bach.Configuration.Creator;
 import java.util.spi.ToolProvider;
 
@@ -31,9 +22,9 @@ module bach {
       LoadFileOperator,
       LoadHeadOperator,
       LoadTextOperator,
+      ListPathsOperator,
       ListToolsOperator;
   provides ToolProvider with
-      Bach,
       ListFilesTool,
       TreeCreateTool,
       TreeDeleteTool,

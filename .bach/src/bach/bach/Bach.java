@@ -48,6 +48,8 @@ public record Bach(String name) implements ToolProvider {
       }
       var bach = API.of(configuration);
       if (verbose) {
+        bach.info("Paths");
+        bach.info(bach.paths().toString(2));
         var finders = bach.toolbox().finders();
         var size = finders.size();
         bach.info("Toolbox with %d tool finder instance%s".formatted(size, size == 1 ? "" : "s"));
@@ -219,12 +221,61 @@ public record Bach(String name) implements ToolProvider {
   public sealed interface Basic {
     Configuration configuration();
 
+    Paths paths();
+
     default void debug(Object message) {
       if (configuration().verbose()) configuration().printer().out.println(message);
     }
 
     default void info(Object message) {
       configuration().printer().out.println(message);
+    }
+
+    /** All about folders and files. */
+    record Paths(Path root, Path out) {
+      public static Paths ofRoot(Path root) {
+        return new Paths(root, root.resolve(".bach/out"));
+      }
+
+      public Path root(String first, String... more) {
+        return root.resolve(Path.of(first, more));
+      }
+
+      public Path out(String first, String... more) {
+        return out.resolve(Path.of(first, more));
+      }
+
+      public Path externalModules() {
+        return root(".bach", "external-modules");
+      }
+
+      public Path externalModules(String first, String... more) {
+        return externalModules().resolve(Path.of(first, more));
+      }
+
+      public Path externalTools() {
+        return root(".bach", "external-tools");
+      }
+
+      public Path externalTools(String first, String... more) {
+        return externalTools().resolve(Path.of(first, more));
+      }
+
+      public String toString(int indent) {
+        return """
+            root             = %s
+            out              = %s
+            external-modules = %s
+            external-tools   = %s
+            """
+            .formatted(
+                root("").toUri(),
+                out("").toUri(),
+                externalModules("").toUri(),
+                externalTools("").toUri())
+            .indent(indent)
+            .stripTrailing();
+      }
     }
   }
 
@@ -385,17 +436,23 @@ public record Bach(String name) implements ToolProvider {
 
     non-sealed class DefaultImplementation implements API {
       protected final Configuration configuration;
+      protected final Paths paths;
       protected final Browser browser;
       protected final Toolbox toolbox;
 
       public DefaultImplementation(Configuration configuration) {
         this.configuration = configuration;
+        this.paths = createPaths();
         this.browser = createBrowser();
         this.toolbox = createToolbox();
       }
 
       protected Browser createBrowser() {
         return new Browser();
+      }
+
+      private Paths createPaths() {
+        return Paths.ofRoot(configuration.projectDirectory());
       }
 
       protected Toolbox createToolbox() {
@@ -413,6 +470,11 @@ public record Bach(String name) implements ToolProvider {
       @Override
       public Configuration configuration() {
         return configuration;
+      }
+
+      @Override
+      public Paths paths() {
+        return paths;
       }
 
       @Override
@@ -467,6 +529,17 @@ public record Bach(String name) implements ToolProvider {
           exception.printStackTrace(err);
           return 1;
         }
+      }
+    }
+
+    record ListPathsOperator(String name) implements Operator {
+      public ListPathsOperator() {
+        this("list-paths");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        bach.info(bach.paths().toString(0));
       }
     }
 
