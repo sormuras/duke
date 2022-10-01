@@ -1,6 +1,7 @@
 package bach;
 
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -332,6 +333,27 @@ public record Bach(String name) implements ToolProvider {
 
       default String name() {
         return getClass().getSimpleName();
+      }
+    }
+
+    record FindTool(String name) implements ToolProvider {
+      public FindTool() {
+        this("find");
+      }
+
+      @Override
+      public int run(PrintWriter out, PrintWriter err, String... args) {
+        var start = Path.of("");
+        var pattern = args.length == 0 ? "*" : args[0];
+        var syntaxAndPattern = pattern.contains(":") ? pattern : "glob:" + pattern;
+        var matcher = start.getFileSystem().getPathMatcher(syntaxAndPattern);
+        try (var stream = Files.find(start, 99, (path, attr) -> matcher.matches(path))) {
+          stream.filter(path -> !start.equals(path)).forEach(out::println);
+          return 0;
+        } catch (Exception exception) {
+          exception.printStackTrace(err);
+          return 1;
+        }
       }
     }
 

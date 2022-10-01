@@ -1,4 +1,5 @@
 import bach.Bach;
+import bach.Bach.API.FindTool;
 import bach.Bach.API.ListOperator;
 import bach.Bach.API.Operator;
 import bach.Bach.Configuration.Creator;
@@ -21,5 +22,6 @@ module bach {
   provides Operator with
       ListOperator;
   provides ToolProvider with
-      Bach;
+      Bach,
+      FindTool;
 }
