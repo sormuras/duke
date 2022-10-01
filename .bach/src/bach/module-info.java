@@ -1,4 +1,8 @@
-import bach.Bach;
+import bach.Bach.API.JarOperator;
+import bach.Bach.API.ListOperator;
+import bach.Bach.API.Operator;
+import bach.Bach.Configuration.Creator;
+import java.util.spi.ToolProvider;
 
 module bach {
   requires jdk.compiler;
@@ -10,11 +14,11 @@ module bach {
 
   exports bach;
 
-  uses bach.Bach.Configuration.Creator;
-  uses bach.Bach.API.Operator;
-  uses java.util.spi.ToolProvider;
+  uses Creator;
+  uses Operator;
+  uses ToolProvider;
 
-  provides bach.Bach.API.Operator with
-      Bach.API.JarOperator,
-      Bach.API.ListOperator;
+  provides Operator with
+      JarOperator,
+      ListOperator;
 }

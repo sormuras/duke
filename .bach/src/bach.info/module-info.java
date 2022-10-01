@@ -1,7 +1,17 @@
+import bach.Bach.API.Operator;
+import bach.Bach.Configuration.Creator;
+import bach.info.ProjectLocalCreator;
+import bach.info.ProjectLocalOperator;
+import bach.info.ProjectLocalTool;
+import java.util.spi.ToolProvider;
+
 module bach.info {
   requires bach;
 
-  provides bach.Bach.Configuration.Creator with bach.info.ProjectLocalCreator;
-  provides bach.Bach.API.Operator with bach.info.ProjectLocalOperator;
-  provides java.util.spi.ToolProvider with bach.info.ProjectLocalTool;
+  provides Creator with
+      ProjectLocalCreator;
+  provides Operator with
+      ProjectLocalOperator;
+  provides ToolProvider with
+      ProjectLocalTool;
 }
