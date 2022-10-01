@@ -36,25 +36,33 @@ public record Bach(String name) implements ToolProvider {
   public int run(PrintWriter out, PrintWriter err, String... args) {
     try {
       var configuration = new Configuration(out, err).withParsingCommandLineArguments(args);
+      var verbose = configuration.verbose();
+      if (verbose) {
+        out.println("Bach " + VERSION);
+        out.println(configuration.toString(0));
+      }
       var bach = API.of(configuration);
-      var welcome = "Bach " + VERSION + " [" + bach.getClass().getSimpleName() + "]";
-      if (configuration.help()) {
-        bach.info(welcome);
-        bach.info(Configuration.USAGE_MESSAGE);
-        bach.info(configuration.toString(2));
-        bach.info("A tool call is composed of a tool name and its arguments");
+      if (verbose) {
+        var finders = bach.toolbox().finders();
+        var size = finders.size();
+        bach.info("Toolbox with %d tool finder instance%s".formatted(size, size == 1 ? "" : "s"));
+        for (var finder : finders) {
+          size = finder.findAll().size();
+          var info = finder.description();
+          var type = finder.getClass().getSimpleName();
+          bach.info("  %2d tool%s in %s [%s]".formatted(size, size == 1 ? "" : "s", info, type));
+        }
+      }
+      if (configuration.help() || configuration.calls().isEmpty()) {
+        bach.info(
+            """
+            Usage: bach [options] <tool> [args...] [+ <tool> [args...]]
+
+            Available tools are:""");
         bach.info(bach.toolbox().toString(2));
-        bach.info(welcome);
         return 0;
       }
-      var calls = configuration.calls();
-      if (calls.isEmpty()) {
-        bach.run("list", List.of("tools"));
-        return 0;
-      }
-      bach.debug(welcome);
-      bach.debug(configuration.toString(0));
-      for (var call : calls) bach.run(call.command());
+      for (var call : configuration.calls()) bach.run(call.command());
       return 0;
     } catch (Exception exception) {
       exception.printStackTrace(err);
@@ -83,8 +91,6 @@ public record Bach(String name) implements ToolProvider {
     public static final String COMMAND_SEPARATOR = "+";
 
     public static final List<String> HELP_FLAGS = List.of("?", "/?", "-?", "-h", "--help");
-
-    public static final String USAGE_MESSAGE = "Usage: bach [<options>] <calls>";
 
     public static boolean isFirstArgumentHelpOptionName(List<String> arguments) {
       return !arguments.isEmpty() && HELP_FLAGS.contains(arguments.get(0));
@@ -261,21 +267,26 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
-    record Toolbox(List<Tool> list) {
+    record Toolbox(List<ToolFinder> finders) {
       public Tool get(String string) {
-        var found = list.stream().filter(tool -> tool.matches(string)).findFirst();
-        if (found.isEmpty()) throw new UnsupportedOperationException(string);
-        return found.get();
+        for (var finder : finders) {
+          var found = finder.findFirst(string);
+          if (found.isEmpty()) continue;
+          return found.get();
+        }
+        throw new UnsupportedOperationException(string);
       }
 
       public String toString(int indent) {
         var joiner = new StringJoiner("\n");
         var width = 3;
         var nicks = new TreeMap<String, List<Tool>>();
-        for (var tool : list) {
-          nicks.computeIfAbsent(tool.nick(), __ -> new ArrayList<>()).add(tool);
-          var length = tool.nick().length();
-          if (length > width) width = length;
+        for (var finder : finders) {
+          for (var tool : finder.findAll()) {
+            nicks.computeIfAbsent(tool.nick(), __ -> new ArrayList<>()).add(tool);
+            var length = tool.nick().length();
+            if (length > width) width = length;
+          }
         }
         var format = "%" + width + "s %s";
         for (var entry : nicks.entrySet()) {
@@ -283,6 +294,21 @@ public record Bach(String name) implements ToolProvider {
           joiner.add(String.format(format, entry.getKey(), names));
         }
         return joiner.toString().indent(indent).stripTrailing();
+      }
+    }
+
+    interface ToolFinder {
+      String description();
+
+      List<Tool> findAll();
+
+      default Optional<Tool> findFirst(String string) {
+        return findAll().stream().filter(tool -> tool.matches(string)).findFirst();
+      }
+
+      static ToolFinder of(String description, List<Tool> tools) {
+        record ListToolFinder(String description, List<Tool> findAll) implements ToolFinder {}
+        return new ListToolFinder(description, List.copyOf(tools));
       }
     }
   }
@@ -305,10 +331,15 @@ public record Bach(String name) implements ToolProvider {
       }
 
       protected Toolbox createToolbox() {
-        var tools = new ArrayList<Tool>();
-        ServiceLoader.load(API.Operator.class).forEach(operator -> tools.add(Tool.of(operator)));
-        ServiceLoader.load(ToolProvider.class).forEach(provider -> tools.add(Tool.of(provider)));
-        return new Toolbox(List.copyOf(tools));
+        var operators = new ArrayList<Tool>();
+        ServiceLoader.load(API.Operator.class).forEach(it -> operators.add(Tool.of(it)));
+        var providers = new ArrayList<Tool>();
+        ServiceLoader.load(ToolProvider.class).forEach(it -> providers.add(Tool.of(it)));
+
+        var finders = new ArrayList<ToolFinder>();
+        finders.add(ToolFinder.of("Bach Operators", operators));
+        finders.add(ToolFinder.of("Tool Providers", providers));
+        return new Toolbox(List.copyOf(finders));
       }
 
       @Override
