@@ -198,7 +198,7 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  public sealed interface BasicAPI {
+  public sealed interface Basic {
     Configuration configuration();
 
     default void debug(Object message) {
@@ -210,7 +210,9 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  public sealed interface ToolingAPI extends BasicAPI {
+  public sealed interface Browsing extends Basic {}
+
+  public sealed interface Tooling extends Browsing {
     Toolbox toolbox();
 
     void run(String name, List<String> arguments);
@@ -313,7 +315,7 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  public sealed interface API extends ToolingAPI {
+  public sealed interface API extends Tooling {
     static API of(Configuration configuration) {
       return ServiceLoader.load(Configuration.Creator.class)
           .findFirst()
