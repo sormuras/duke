@@ -1,6 +1,10 @@
 package bach;
 
 import java.io.PrintWriter;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -210,7 +214,49 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  public sealed interface Browsing extends Basic {}
+  public sealed interface Browsing extends Basic {
+    Browser browser();
+
+    /** A facade for a http client instance. */
+    record Browser(HttpClient client) {
+      public Browser() {
+        this(HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build());
+      }
+
+      String read(URI source) {
+        try {
+          var request = HttpRequest.newBuilder(source).build();
+          return client.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        } catch (Exception exception) {
+          throw new RuntimeException(exception);
+        }
+      }
+
+      HttpResponse<Path> load(URI source, Path target) {
+        if (target.toString().isBlank()) throw new IllegalArgumentException("Blank target!");
+        try {
+          var parent = target.getParent();
+          if (parent != null) Files.createDirectories(parent);
+          var request = HttpRequest.newBuilder(source).build();
+          var response = client.send(request, HttpResponse.BodyHandlers.ofFile(target));
+          if (response.statusCode() >= 400) Files.deleteIfExists(target);
+          return response;
+        } catch (Exception exception) {
+          throw new RuntimeException(exception);
+        }
+      }
+
+      HttpResponse<?> head(URI source) {
+        try {
+          var publisher = HttpRequest.BodyPublishers.noBody();
+          var request = HttpRequest.newBuilder(source).method("HEAD", publisher).build();
+          return client.send(request, HttpResponse.BodyHandlers.discarding());
+        } catch (Exception exception) {
+          throw new RuntimeException(exception);
+        }
+      }
+    }
+  }
 
   public sealed interface Tooling extends Browsing {
     Toolbox toolbox();
@@ -325,11 +371,17 @@ public record Bach(String name) implements ToolProvider {
 
     non-sealed class DefaultImplementation implements API {
       protected final Configuration configuration;
+      protected final Browser browser;
       protected final Toolbox toolbox;
 
       public DefaultImplementation(Configuration configuration) {
         this.configuration = configuration;
+        this.browser = createBrowser();
         this.toolbox = createToolbox();
+      }
+
+      protected Browser createBrowser() {
+        return new Browser();
       }
 
       protected Toolbox createToolbox() {
@@ -350,6 +402,11 @@ public record Bach(String name) implements ToolProvider {
       }
 
       @Override
+      public Browser browser() {
+        return browser;
+      }
+
+      @Override
       public Toolbox toolbox() {
         return toolbox;
       }
@@ -367,6 +424,14 @@ public record Bach(String name) implements ToolProvider {
 
       default String name() {
         return getClass().getSimpleName();
+      }
+
+      default boolean help(API bach, List<String> arguments, String options) {
+        if (arguments.isEmpty() || Configuration.isFirstArgumentHelpOptionName(arguments)) {
+          bach.info("Usage: bach %s [?] %s".formatted(name(), options));
+          return true;
+        }
+        return false;
       }
     }
 
@@ -408,6 +473,53 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
+    record LoadFileOperator(String name) implements Operator {
+      public LoadFileOperator() {
+        this("load-file");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<from-uri> [<to-path>]")) return;
+        var uri = URI.create(arguments.get(0));
+        var path = Path.of(arguments.get(1));
+        var response = bach.browser().load(uri, path);
+        if (Files.notExists(response.body())) throw new RuntimeException(response.toString());
+      }
+    }
+
+    record LoadHeadOperator(String name) implements Operator {
+      public LoadHeadOperator() {
+        this("load-head");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<uris...>")) return;
+        for (var argument : arguments) {
+          var uri = URI.create(argument);
+          var head = bach.browser().head(uri);
+          bach.info(head);
+          for (var entry : head.headers().map().entrySet()) {
+            bach.debug(entry.getKey());
+            for (var line : entry.getValue()) bach.debug("  " + line);
+          }
+        }
+      }
+    }
+
+    record LoadTextOperator(String name) implements Operator {
+      public LoadTextOperator() {
+        this("load-text");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<uris...>")) return;
+        bach.info(bach.browser().read(URI.create(arguments.get(0))));
+      }
+    }
+
     record TreeTool(String name) implements ToolProvider {
       public TreeTool() {
         this("tree");
@@ -427,7 +539,7 @@ public record Bach(String name) implements ToolProvider {
             }
           }
 
-          static CLI parse(java.util.List<String> arguments) {
+          static CLI parse(List<String> arguments) {
             var currentWorkingDirectory = Path.of(".");
             if (arguments.isEmpty()) {
               return new CLI(Mode.PRINT, currentWorkingDirectory);
