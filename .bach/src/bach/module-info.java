@@ -2,6 +2,7 @@ import bach.Bach;
 import bach.Bach.API.FindTool;
 import bach.Bach.API.ListOperator;
 import bach.Bach.API.Operator;
+import bach.Bach.API.TreeTool;
 import bach.Bach.Configuration.Creator;
 import java.util.spi.ToolProvider;
 
@@ -23,5 +24,6 @@ module bach {
       ListOperator;
   provides ToolProvider with
       Bach,
-      FindTool;
+      FindTool,
+      TreeTool;
 }

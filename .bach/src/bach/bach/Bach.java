@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.StringJoiner;
@@ -370,6 +371,85 @@ public record Bach(String name) implements ToolProvider {
         }
         if (arguments.isEmpty() || arguments.contains("tools")) {
           bach.info(bach.toolbox().toString(0));
+        }
+      }
+    }
+
+    record TreeTool(String name) implements ToolProvider {
+      public TreeTool() {
+        this("tree");
+      }
+
+      @Override
+      public int run(PrintWriter out, PrintWriter err, String... args) {
+        record CLI(Mode mode, Path path) {
+          enum Mode {
+            PRINT,
+            CREATE,
+            CLEAN,
+            DELETE;
+
+            static Mode of(String value) {
+              return Mode.valueOf(value.toUpperCase(Locale.ROOT));
+            }
+          }
+
+          static CLI parse(java.util.List<String> arguments) {
+            var currentWorkingDirectory = Path.of(".");
+            if (arguments.isEmpty()) {
+              return new CLI(Mode.PRINT, currentWorkingDirectory);
+            }
+            var first = arguments.get(0);
+            if (arguments.size() == 1) {
+              try {
+                return new CLI(Mode.of(first), currentWorkingDirectory);
+              } catch (IllegalArgumentException exception) {
+                return new CLI(Mode.PRINT, Path.of(first));
+              }
+            }
+            var second = arguments.get(1);
+            if (arguments.size() == 2) {
+              return new CLI(Mode.of(first), Path.of(second));
+            }
+            throw new IllegalArgumentException(arguments.toString());
+          }
+        }
+        var arguments = List.of(args);
+        if (Configuration.isFirstArgumentHelpOptionName(arguments)) {
+          out.println(
+              "Usage: %s <mode> <path> with: %s".formatted(name, List.of(CLI.Mode.values())));
+          return 0;
+        }
+        var cli = CLI.parse(arguments);
+        var mode = cli.mode();
+        var path = cli.path();
+        try {
+          if (mode == CLI.Mode.PRINT) {
+            try (var stream = Files.walk(path)) {
+              stream
+                  .filter(Files::isDirectory)
+                  .map(Path::normalize)
+                  .map(Path::toString)
+                  .map(name -> name.replace('\\', '/'))
+                  .filter(name -> !name.contains(".git/"))
+                  .sorted()
+                  .map(name -> name.replaceAll(".+?/", "  "))
+                  .forEach(out::println);
+            }
+          }
+          if (mode == CLI.Mode.CREATE || mode == CLI.Mode.CLEAN) {
+            Files.createDirectories(path);
+          }
+          if (mode == CLI.Mode.DELETE || mode == CLI.Mode.CLEAN) {
+            try (var stream = Files.walk(path)) {
+              var files = stream.sorted((p, q) -> -p.compareTo(q));
+              for (var file : files.toArray(Path[]::new)) Files.deleteIfExists(file);
+            }
+          }
+          return 0;
+        } catch (Exception exception) {
+          exception.printStackTrace(err);
+          return 1;
         }
       }
     }
