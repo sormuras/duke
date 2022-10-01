@@ -1,6 +1,9 @@
 package bach;
 
 import java.io.PrintWriter;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -12,9 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.spi.ToolProvider;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public record Bach(String name) implements ToolProvider {
 
@@ -261,6 +269,10 @@ public record Bach(String name) implements ToolProvider {
         return externalTools().resolve(Path.of(first, more));
       }
 
+      public Path javaHome() {
+        return Path.of(System.getProperty("java.home"));
+      }
+
       public String toString(int indent) {
         return """
             root             = %s
@@ -275,6 +287,59 @@ public record Bach(String name) implements ToolProvider {
                 externalTools("").toUri())
             .indent(indent)
             .stripTrailing();
+      }
+    }
+
+    interface ModulesSupport {
+      static void consumeAllNames(ModuleFinder finder, Consumer<String> consumer) {
+        finder.findAll().stream()
+                .map(ModuleReference::descriptor)
+                .map(ModuleDescriptor::name)
+                .sorted()
+                .map(string -> string.indent(2).stripTrailing())
+                .forEach(consumer);
+      }
+
+      static List<String> listMissingNames(List<ModuleFinder> finders, Set<String> more) {
+        // Populate a set with all module names being in a "requires MODULE;" directive
+        var requires = new TreeSet<>(more); // more required modules
+        for (var finder : finders) requires.addAll(required(finder)); // main, test, and others
+        // Remove names of declared modules from various module finders
+        requires.removeAll(declared(ModuleFinder.ofSystem()));
+        for (var finder : finders) requires.removeAll(declared(finder));
+        return List.copyOf(requires);
+      }
+
+      static TreeSet<String> declared(ModuleFinder finder) {
+        return declared(finder.findAll().stream().map(ModuleReference::descriptor));
+      }
+
+      static TreeSet<String> declared(Stream<ModuleDescriptor> descriptors) {
+        return descriptors
+            .map(ModuleDescriptor::name)
+            .collect(Collectors.toCollection(TreeSet::new));
+      }
+
+      static TreeSet<String> required(ModuleFinder finder) {
+        return required(finder.findAll().stream().map(ModuleReference::descriptor));
+      }
+
+      static TreeSet<String> required(Stream<ModuleDescriptor> descriptors) {
+        return descriptors
+            .map(ModuleDescriptor::requires)
+            .flatMap(Set::stream)
+            .filter(ModulesSupport::required)
+            .map(ModuleDescriptor.Requires::name)
+            .collect(Collectors.toCollection(TreeSet::new));
+      }
+
+      static boolean required(ModuleDescriptor.Requires requires) {
+        var modifiers = requires.modifiers();
+        if (modifiers.isEmpty()
+            || modifiers.contains(ModuleDescriptor.Requires.Modifier.TRANSITIVE)) return true;
+        if (modifiers.contains(ModuleDescriptor.Requires.Modifier.MANDATED)) return false;
+        if (modifiers.contains(ModuleDescriptor.Requires.Modifier.SYNTHETIC)) return false;
+        return !modifiers.contains(ModuleDescriptor.Requires.Modifier.STATIC);
       }
     }
   }
@@ -551,6 +616,37 @@ public record Bach(String name) implements ToolProvider {
       @Override
       public void operate(API bach, List<String> arguments) {
         bach.info(bach.toolbox().toString(0));
+      }
+    }
+
+    record ListModulesOperator(String name) implements Operator {
+
+      public ListModulesOperator() {
+        this("list-modules");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        bach.info("# Modules");
+        bach.info("## Project modules");
+        bach.info("    // TODO");
+        // TODO bach.info("    %d project modules".formatted(project.size()));
+        bach.info("## External modules in " + bach.paths().externalModules().toUri());
+        var externalModuleFinder = ModuleFinder.of(bach.paths().externalModules());
+        var externalModules = externalModuleFinder.findAll();
+        ModulesSupport.consumeAllNames(externalModuleFinder, bach::info);
+        bach.info("    %d external modules".formatted(externalModules.size()));
+
+        bach.info("## Missing external modules");
+        var missingModules = ModulesSupport.listMissingNames(List.of(externalModuleFinder), Set.of());
+        missingModules.forEach(bach::info);
+        bach.info("    %d missing external modules".formatted(missingModules.size()));
+
+        var systemModuleFinder = ModuleFinder.ofSystem();
+        bach.info("## System modules in " + bach.paths().javaHome().resolve("lib").toUri());
+        var systemModules = systemModuleFinder.findAll();
+        ModulesSupport.consumeAllNames(systemModuleFinder, bach::debug);
+        bach.info("    %d system modules".formatted(systemModules.size()));
       }
     }
 

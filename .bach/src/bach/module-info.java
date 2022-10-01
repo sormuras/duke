@@ -23,6 +23,7 @@ module bach {
       LoadHeadOperator,
       LoadTextOperator,
       ListPathsOperator,
+      ListModulesOperator,
       ListToolsOperator;
   provides ToolProvider with
       ListFilesTool,
