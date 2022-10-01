@@ -1,3 +1,4 @@
+import bach.Bach;
 import bach.Bach.API.JarOperator;
 import bach.Bach.API.ListOperator;
 import bach.Bach.API.Operator;
@@ -21,4 +22,6 @@ module bach {
   provides Operator with
       JarOperator,
       ListOperator;
+  provides ToolProvider with
+      Bach;
 }
