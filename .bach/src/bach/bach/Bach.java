@@ -99,11 +99,6 @@ public record Bach(String name) implements ToolProvider {
 
     public record Call(List<String> command) {}
 
-    @FunctionalInterface
-    public interface Creator {
-      API createBach(Configuration configuration);
-    }
-
     public static final String COMMAND_SEPARATOR = "+";
 
     public static final List<String> HELP_FLAGS = List.of("?", "/?", "-?", "-h", "--help");
@@ -293,11 +288,11 @@ public record Bach(String name) implements ToolProvider {
     interface ModulesSupport {
       static void consumeAllNames(ModuleFinder finder, Consumer<String> consumer) {
         finder.findAll().stream()
-                .map(ModuleReference::descriptor)
-                .map(ModuleDescriptor::name)
-                .sorted()
-                .map(string -> string.indent(2).stripTrailing())
-                .forEach(consumer);
+            .map(ModuleReference::descriptor)
+            .map(ModuleDescriptor::name)
+            .sorted()
+            .map(string -> string.indent(2).stripTrailing())
+            .forEach(consumer);
       }
 
       static List<String> listMissingNames(List<ModuleFinder> finders, Set<String> more) {
@@ -493,7 +488,7 @@ public record Bach(String name) implements ToolProvider {
 
   public sealed interface API extends Tooling {
     static API of(Configuration configuration) {
-      return ServiceLoader.load(Configuration.Creator.class)
+      return ServiceLoader.load(Creator.class)
           .findFirst()
           .orElse(DefaultImplementation::new)
           .createBach(configuration);
@@ -557,6 +552,11 @@ public record Bach(String name) implements ToolProvider {
         debug(">> %s %s".formatted(name, String.join(" ", arguments)));
         toolbox().get(name).run(this, arguments);
       }
+    }
+
+    @FunctionalInterface
+    interface Creator {
+      API createBach(Configuration configuration);
     }
 
     @FunctionalInterface

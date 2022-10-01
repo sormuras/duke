@@ -1,9 +1,5 @@
-import bach.Bach.API.Operator;
-import bach.Bach.Configuration.Creator;
-import bach.info.ProjectLocalCreator;
-import bach.info.ProjectLocalJarOperator;
-import bach.info.ProjectLocalOperator;
-import bach.info.ProjectLocalTool;
+import bach.Bach.API.*;
+import bach.info.*;
 import java.util.spi.ToolProvider;
 
 module bach.info {

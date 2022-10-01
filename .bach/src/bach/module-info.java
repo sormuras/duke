@@ -1,5 +1,4 @@
 import bach.Bach.API.*;
-import bach.Bach.Configuration.Creator;
 import java.util.spi.ToolProvider;
 
 /** Defines Bach's API. */
