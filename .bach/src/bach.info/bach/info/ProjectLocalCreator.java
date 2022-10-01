@@ -1,10 +1,12 @@
 package bach.info;
 
-import bach.Bach;
+import bach.Bach.API;
+import bach.Bach.Configuration;
+import bach.Bach.Configuration.Creator;
 
-public class ProjectLocalCreator implements Bach.Creator {
+public class ProjectLocalCreator implements Creator {
   @Override
-  public Bach.API createBach(Bach.Configuration configuration) {
+  public API createBach(Configuration configuration) {
     return new ProjectLocalAPI(configuration);
   }
 }

@@ -8,7 +8,7 @@ module bach {
 
   exports bach;
 
-  uses bach.Bach.Creator;
+  uses bach.Bach.Configuration.Creator;
   uses bach.Bach.Operator;
   uses java.util.spi.ToolProvider;
 

@@ -13,7 +13,7 @@ import java.util.spi.ToolProvider;
 
 public record Bach(String name) implements ToolProvider {
 
-  public static final String VERSION = "2022.09.30";
+  public static final String VERSION = "2022.10.01";
 
   public static void main(String... args) {
     System.exit(run(args));
@@ -32,14 +32,10 @@ public record Bach(String name) implements ToolProvider {
 
   @Override
   public int run(PrintWriter out, PrintWriter err, String... args) {
-    var printer = new Configuration.Printer(out, err);
-    var configuration = new Configuration(printer).withParsingCommandLineArguments(args);
     try {
-      var bach =
-          ServiceLoader.load(Creator.class)
-              .findFirst()
-              .orElse(DefaultAPI::new)
-              .createBach(configuration);
+      var printer = new Configuration.Printer(out, err);
+      var configuration = new Configuration(printer).withParsingCommandLineArguments(args);
+      var bach = configuration.createBach();
       var welcome = "Bach " + VERSION + " [" + bach.getClass().getSimpleName() + "]";
       if (configuration.help()) {
         bach.info(welcome);
@@ -74,6 +70,15 @@ public record Bach(String name) implements ToolProvider {
       Optional<String> __project_directory,
       List<Call> calls) {
 
+    public record Printer(PrintWriter out, PrintWriter err) {}
+
+    public record Call(List<String> command) {}
+
+    @FunctionalInterface
+    public interface Creator {
+      API createBach(Configuration configuration);
+    }
+
     public static final String COMMAND_SEPARATOR = "+";
 
     public static final List<String> HELP_FLAGS = List.of("?", "/?", "-?", "-h", "--help");
@@ -84,10 +89,6 @@ public record Bach(String name) implements ToolProvider {
       return !arguments.isEmpty() && HELP_FLAGS.contains(arguments.get(0));
     }
 
-    public record Printer(PrintWriter out, PrintWriter err) {}
-
-    public record Call(List<String> command) {}
-
     public Configuration(Printer printer) {
       this(
           printer,
@@ -96,6 +97,10 @@ public record Bach(String name) implements ToolProvider {
           Optional.empty(),
           Optional.empty(),
           List.of());
+    }
+
+    public API createBach() {
+      return ServiceLoader.load(Creator.class).findFirst().orElse(DefaultAPI::new).createBach(this);
     }
 
     public boolean help() {
@@ -190,11 +195,6 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  @FunctionalInterface
-  public interface Creator {
-    API createBach(Configuration configuration);
-  }
-
   public interface API {
     Configuration configuration();
 
@@ -283,7 +283,7 @@ public record Bach(String name) implements ToolProvider {
       @Override
       public void run(API api, List<String> arguments) {
         var printer = api.configuration().printer();
-        provider.run(printer.out(),  printer.err(), arguments.toArray(String[]::new));
+        provider.run(printer.out(), printer.err(), arguments.toArray(String[]::new));
       }
     }
 

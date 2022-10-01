@@ -1,9 +1,10 @@
 package bach.info;
 
-import bach.Bach;
+import bach.Bach.Configuration;
+import bach.Bach.DefaultAPI;
 
-class ProjectLocalAPI extends Bach.DefaultAPI {
-  ProjectLocalAPI(Bach.Configuration configuration) {
+class ProjectLocalAPI extends DefaultAPI {
+  ProjectLocalAPI(Configuration configuration) {
     super(configuration);
   }
 }
