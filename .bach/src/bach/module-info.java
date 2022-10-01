@@ -1,6 +1,6 @@
 import bach.Bach;
-import bach.Bach.API.FindTool;
-import bach.Bach.API.ListOperator;
+import bach.Bach.API.ListFilesTool;
+import bach.Bach.API.ListToolsOperator;
 import bach.Bach.API.LoadFileOperator;
 import bach.Bach.API.LoadHeadOperator;
 import bach.Bach.API.LoadTextOperator;
@@ -29,9 +29,9 @@ module bach {
       LoadFileOperator,
       LoadHeadOperator,
       LoadTextOperator,
-      ListOperator;
+          ListToolsOperator;
   provides ToolProvider with
       Bach,
-      FindTool,
+          ListFilesTool,
       TreeTool;
 }

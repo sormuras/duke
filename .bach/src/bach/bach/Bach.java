@@ -435,9 +435,9 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
-    record FindTool(String name) implements ToolProvider {
-      public FindTool() {
-        this("find");
+    record ListFilesTool(String name) implements ToolProvider {
+      public ListFilesTool() {
+        this("list-files");
       }
 
       @Override
@@ -456,20 +456,14 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
-    record ListOperator(String name) implements Operator {
-      public ListOperator() {
-        this("list");
+    record ListToolsOperator(String name) implements Operator {
+      public ListToolsOperator() {
+        this("list-tools");
       }
 
       @Override
       public void operate(API bach, List<String> arguments) {
-        if (Configuration.isFirstArgumentHelpOptionName(arguments)) {
-          bach.info("Usage: bach list ?|tools|...");
-          return;
-        }
-        if (arguments.isEmpty() || arguments.contains("tools")) {
-          bach.info(bach.toolbox().toString(0));
-        }
+        bach.info(bach.toolbox().toString(0));
       }
     }
 
