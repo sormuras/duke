@@ -1,3 +1,5 @@
+import bach.Bach;
+
 module bach {
   requires jdk.compiler;
   requires jdk.jartool;
@@ -13,6 +15,6 @@ module bach {
   uses java.util.spi.ToolProvider;
 
   provides bach.Bach.API.Operator with
-      bach.Bach.DefaultAPI.JarOperator,
-      bach.Bach.DefaultAPI.ListOperator;
+      Bach.API.JarOperator,
+      Bach.API.ListOperator;
 }

@@ -7,6 +7,6 @@ import bach.Bach.Configuration.Creator;
 public class ProjectLocalCreator implements Creator {
   @Override
   public API createBach(Configuration configuration) {
-    return new ProjectLocalAPI(configuration);
+    return new ProjectLocalImplementation(configuration);
   }
 }
