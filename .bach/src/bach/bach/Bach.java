@@ -335,19 +335,6 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
-    record JarOperator(String name) implements Operator {
-      public JarOperator() {
-        this("jar");
-      }
-
-      @Override
-      public void operate(API bach, List<String> arguments) {
-        bach.info("BEGIN");
-        bach.run("jdk.jartool/jar", arguments);
-        bach.info("END");
-      }
-    }
-
     record ListOperator(String name) implements Operator {
       public ListOperator() {
         this("list");

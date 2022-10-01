@@ -1,6 +1,7 @@
 import bach.Bach.API.Operator;
 import bach.Bach.Configuration.Creator;
 import bach.info.ProjectLocalCreator;
+import bach.info.ProjectLocalJarOperator;
 import bach.info.ProjectLocalOperator;
 import bach.info.ProjectLocalTool;
 import java.util.spi.ToolProvider;
@@ -11,6 +12,7 @@ module bach.info {
   provides Creator with
       ProjectLocalCreator;
   provides Operator with
+      ProjectLocalJarOperator,
       ProjectLocalOperator;
   provides ToolProvider with
       ProjectLocalTool;

@@ -8,11 +8,9 @@ import java.util.List;
 public class ProjectLocalOperator implements Operator {
   @Override
   public String name() {
-    return "operator";
+    return "noop";
   }
 
   @Override
-  public void operate(API bach, List<String> arguments) {
-    bach.info("OPERATOR!");
-  }
+  public void operate(API bach, List<String> arguments) {}
 }
