@@ -32,7 +32,7 @@ public record Bach(String name) implements ToolProvider {
 
   @Override
   public int run(PrintWriter out, PrintWriter err, String... args) {
-    var printer = new Printer(out, err);
+    var printer = new Configuration.Printer(out, err);
     var configuration = new Configuration(printer).withParsingCommandLineArguments(args);
     try {
       var bach =
@@ -83,6 +83,8 @@ public record Bach(String name) implements ToolProvider {
     public static boolean isFirstArgumentHelpOptionName(List<String> arguments) {
       return !arguments.isEmpty() && HELP_FLAGS.contains(arguments.get(0));
     }
+
+    public record Printer(PrintWriter out, PrintWriter err) {}
 
     public record Call(List<String> command) {}
 
@@ -199,15 +201,11 @@ public record Bach(String name) implements ToolProvider {
     Tasks tasks();
 
     default void debug(Object message) {
-      if (configuration().verbose()) printer().out.println(message);
+      if (configuration().verbose()) configuration().printer().out.println(message);
     }
 
     default void info(Object message) {
-      printer().out.println(message);
-    }
-
-    default Printer printer() {
-      return configuration().printer();
+      configuration().printer().out.println(message);
     }
 
     default void run(List<String> command) {
@@ -252,8 +250,6 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  public record Printer(PrintWriter out, PrintWriter err) {}
-
   public sealed interface Task {
     String name();
 
@@ -286,7 +282,8 @@ public record Bach(String name) implements ToolProvider {
     record ToolProviderTask(String name, ToolProvider provider) implements Task {
       @Override
       public void run(API api, List<String> arguments) {
-        provider.run(api.printer().out(), api.printer().err(), arguments.toArray(String[]::new));
+        var printer = api.configuration().printer();
+        provider.run(printer.out(),  printer.err(), arguments.toArray(String[]::new));
       }
     }
 
