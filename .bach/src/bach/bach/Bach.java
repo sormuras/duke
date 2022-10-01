@@ -33,8 +33,7 @@ public record Bach(String name) implements ToolProvider {
   @Override
   public int run(PrintWriter out, PrintWriter err, String... args) {
     try {
-      var printer = new Configuration.Printer(out, err);
-      var configuration = new Configuration(printer).withParsingCommandLineArguments(args);
+      var configuration = new Configuration(out, err).withParsingCommandLineArguments(args);
       var bach = configuration.createBach();
       var welcome = "Bach " + VERSION + " [" + bach.getClass().getSimpleName() + "]";
       if (configuration.help()) {
@@ -89,9 +88,9 @@ public record Bach(String name) implements ToolProvider {
       return !arguments.isEmpty() && HELP_FLAGS.contains(arguments.get(0));
     }
 
-    public Configuration(Printer printer) {
+    public Configuration(PrintWriter out, PrintWriter err) {
       this(
-          printer,
+          new Printer(out, err),
           Optional.empty(),
           Optional.empty(),
           Optional.empty(),
