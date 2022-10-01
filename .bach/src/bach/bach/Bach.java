@@ -10,7 +10,6 @@ import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.StringJoiner;
@@ -536,70 +535,60 @@ public record Bach(String name) implements ToolProvider {
 
       @Override
       public int run(PrintWriter out, PrintWriter err, String... args) {
-        record CLI(Mode mode, Path path) {
-          enum Mode {
-            PRINT,
-            CREATE,
-            CLEAN,
-            DELETE;
-
-            static Mode of(String value) {
-              return Mode.valueOf(value.toUpperCase(Locale.ROOT));
-            }
-          }
-
-          static CLI parse(List<String> arguments) {
-            var currentWorkingDirectory = Path.of(".");
-            if (arguments.isEmpty()) {
-              return new CLI(Mode.PRINT, currentWorkingDirectory);
-            }
-            var first = arguments.get(0);
-            if (arguments.size() == 1) {
-              try {
-                return new CLI(Mode.of(first), currentWorkingDirectory);
-              } catch (IllegalArgumentException exception) {
-                return new CLI(Mode.PRINT, Path.of(first));
-              }
-            }
-            var second = arguments.get(1);
-            if (arguments.size() == 2) {
-              return new CLI(Mode.of(first), Path.of(second));
-            }
-            throw new IllegalArgumentException(arguments.toString());
-          }
-        }
-        var arguments = List.of(args);
-        if (Configuration.isFirstArgumentHelpOptionName(arguments)) {
-          out.println(
-              "Usage: %s <mode> <path> with: %s".formatted(name, List.of(CLI.Mode.values())));
+        var start = Path.of(args.length == 0 ? "." : args[0]);
+        try (var stream = Files.walk(start, 99)) {
+          stream
+              .filter(Files::isDirectory)
+              .map(Path::normalize)
+              .map(Path::toString)
+              .map(name -> name.replace('\\', '/'))
+              .filter(name -> !name.contains(".git/"))
+              .sorted()
+              .map(name -> name.replaceAll(".+?/", "  "))
+              .forEach(out::println);
           return 0;
+        } catch (Exception exception) {
+          exception.printStackTrace(err);
+          return 1;
         }
-        var cli = CLI.parse(arguments);
-        var mode = cli.mode();
-        var path = cli.path();
+      }
+    }
+
+    record TreeCreateTool(String name) implements ToolProvider {
+      public TreeCreateTool() {
+        this("tree-create");
+      }
+
+      @Override
+      public int run(PrintWriter out, PrintWriter err, String... args) {
+        if (args.length != 1) {
+          err.println("Exactly one argument expected, but got: " + args.length);
+          return -1;
+        }
         try {
-          if (mode == CLI.Mode.PRINT) {
-            try (var stream = Files.walk(path)) {
-              stream
-                  .filter(Files::isDirectory)
-                  .map(Path::normalize)
-                  .map(Path::toString)
-                  .map(name -> name.replace('\\', '/'))
-                  .filter(name -> !name.contains(".git/"))
-                  .sorted()
-                  .map(name -> name.replaceAll(".+?/", "  "))
-                  .forEach(out::println);
-            }
-          }
-          if (mode == CLI.Mode.CREATE || mode == CLI.Mode.CLEAN) {
-            Files.createDirectories(path);
-          }
-          if (mode == CLI.Mode.DELETE || mode == CLI.Mode.CLEAN) {
-            try (var stream = Files.walk(path)) {
-              var files = stream.sorted((p, q) -> -p.compareTo(q));
-              for (var file : files.toArray(Path[]::new)) Files.deleteIfExists(file);
-            }
-          }
+          Files.createDirectories(Path.of(args[0]));
+          return 0;
+        } catch (Exception exception) {
+          exception.printStackTrace(err);
+          return 1;
+        }
+      }
+    }
+
+    record TreeDeleteTool(String name) implements ToolProvider {
+      public TreeDeleteTool() {
+        this("tree-delete");
+      }
+
+      @Override
+      public int run(PrintWriter out, PrintWriter err, String... args) {
+        if (args.length != 1) {
+          err.println("Exactly one argument expected, but got: " + args.length);
+          return -1;
+        }
+        try (var stream = Files.walk(Path.of(args[0]))) {
+          var files = stream.sorted((p, q) -> -p.compareTo(q));
+          for (var file : files.toArray(Path[]::new)) Files.deleteIfExists(file);
           return 0;
         } catch (Exception exception) {
           exception.printStackTrace(err);
