@@ -40,14 +40,14 @@ public record Bach(String name) implements ToolProvider {
         bach.info(welcome);
         bach.info(Configuration.USAGE_MESSAGE);
         bach.info(configuration.toString(2));
-        bach.info("A call is composed of a task name and its arguments");
-        bach.info(bach.tasks().toString(2));
+        bach.info("A tool call is composed of a tool name and its arguments");
+        bach.info(bach.toolbox().toString(2));
         bach.info(welcome);
         return 0;
       }
       var calls = configuration.calls();
       if (calls.isEmpty()) {
-        bach.run("list", List.of("tasks"));
+        bach.run("list", List.of("tools"));
         return 0;
       }
       bach.debug(welcome);
@@ -206,7 +206,7 @@ public record Bach(String name) implements ToolProvider {
 
     Configuration configuration();
 
-    Tasks tasks();
+    Toolbox toolbox();
 
     default void debug(Object message) {
       if (configuration().verbose()) configuration().printer().out.println(message);
@@ -226,30 +226,30 @@ public record Bach(String name) implements ToolProvider {
 
     default void run(String name, List<String> arguments) {
       debug(">> %s %s".formatted(name, String.join(" ", arguments)));
-      tasks().get(name).run(this, arguments);
+      toolbox().get(name).run(this, arguments);
     }
   }
 
   public static class DefaultAPI implements API {
 
     protected final Configuration configuration;
-    protected final Tasks actions;
+    protected final Toolbox toolbox;
 
     public DefaultAPI(Configuration configuration) {
       this.configuration = configuration;
-      this.actions = createActions();
+      this.toolbox = createToolbox();
     }
 
-    protected Tasks createActions() {
-      var actions = new ArrayList<Task>();
-      ServiceLoader.load(API.Operator.class).forEach(operator -> actions.add(Task.of(operator)));
-      ServiceLoader.load(ToolProvider.class).forEach(tool -> actions.add(Task.of(tool)));
-      return new Tasks(List.copyOf(actions));
+    protected Toolbox createToolbox() {
+      var tools = new ArrayList<Tool>();
+      ServiceLoader.load(API.Operator.class).forEach(operator -> tools.add(Tool.of(operator)));
+      ServiceLoader.load(ToolProvider.class).forEach(provider -> tools.add(Tool.of(provider)));
+      return new Toolbox(List.copyOf(tools));
     }
 
     @Override
-    public Tasks tasks() {
-      return actions;
+    public Toolbox toolbox() {
+      return toolbox;
     }
 
     @Override
@@ -278,17 +278,17 @@ public record Bach(String name) implements ToolProvider {
       @Override
       public void operate(API bach, List<String> arguments) {
         if (Configuration.isFirstArgumentHelpOptionName(arguments)) {
-          bach.info("Usage: bach list ?|tasks|...");
+          bach.info("Usage: bach list ?|tools|...");
           return;
         }
-        if (arguments.isEmpty() || arguments.contains("tasks")) {
-          bach.info(bach.tasks().toString(0));
+        if (arguments.isEmpty() || arguments.contains("tools")) {
+          bach.info(bach.toolbox().toString(0));
         }
       }
     }
   }
 
-  public sealed interface Task {
+  public sealed interface Tool {
     String name();
 
     default String nick() {
@@ -302,12 +302,12 @@ public record Bach(String name) implements ToolProvider {
 
     void run(API api, List<String> arguments);
 
-    static Task of(API.Operator operator) {
-      return new BachOperatorTask(prefixIfNeeded(operator.name(), operator), operator);
+    static Tool of(API.Operator operator) {
+      return new BachOperatorTool(prefixIfNeeded(operator.name(), operator), operator);
     }
 
-    static Task of(ToolProvider provider) {
-      return new ToolProviderTask(prefixIfNeeded(provider.name(), provider), provider);
+    static Tool of(ToolProvider provider) {
+      return new ToolProviderTool(prefixIfNeeded(provider.name(), provider), provider);
     }
 
     private static String prefixIfNeeded(String name, Object object) {
@@ -317,7 +317,7 @@ public record Bach(String name) implements ToolProvider {
       return prefix + '/' + name;
     }
 
-    record ToolProviderTask(String name, ToolProvider provider) implements Task {
+    record ToolProviderTool(String name, ToolProvider provider) implements Tool {
       @Override
       public void run(API api, List<String> arguments) {
         var printer = api.configuration().printer();
@@ -325,7 +325,7 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
-    record BachOperatorTask(String name, API.Operator operator) implements Task {
+    record BachOperatorTool(String name, API.Operator operator) implements Tool {
       @Override
       public void run(API api, List<String> arguments) {
         operator.operate(api, arguments);
@@ -333,25 +333,25 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  public record Tasks(List<Task> list) {
-    public Task get(String name) {
-      var found = list.stream().filter(task -> task.matches(name)).findFirst();
-      if (found.isEmpty()) throw new UnsupportedOperationException(name);
+  public record Toolbox(List<Tool> list) {
+    public Tool get(String string) {
+      var found = list.stream().filter(tool -> tool.matches(string)).findFirst();
+      if (found.isEmpty()) throw new UnsupportedOperationException(string);
       return found.get();
     }
 
     public String toString(int indent) {
       var joiner = new StringJoiner("\n");
       var width = 3;
-      var nicks = new TreeMap<String, List<Task>>();
-      for (var task : list) {
-        nicks.computeIfAbsent(task.nick(), __ -> new ArrayList<>()).add(task);
-        var length = task.nick().length();
+      var nicks = new TreeMap<String, List<Tool>>();
+      for (var tool : list) {
+        nicks.computeIfAbsent(tool.nick(), __ -> new ArrayList<>()).add(tool);
+        var length = tool.nick().length();
         if (length > width) width = length;
       }
       var format = "%" + width + "s %s";
       for (var entry : nicks.entrySet()) {
-        var names = entry.getValue().stream().map(Task::name).toList();
+        var names = entry.getValue().stream().map(Tool::name).toList();
         joiner.add(String.format(format, entry.getKey(), names));
       }
       return joiner.toString().indent(indent).stripTrailing();
