@@ -22,6 +22,7 @@ module run.bach {
   provides Operator with
       LoadFileOperator,
       LoadHeadOperator,
+      LoadLibraryOperator,
       LoadModuleOperator,
       LoadModulesOperator,
       LoadTextOperator,
