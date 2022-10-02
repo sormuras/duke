@@ -1,7 +1,6 @@
 package run.bach;
 
 import java.io.PrintWriter;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -16,13 +15,13 @@ public class Bach {
     System.exit(run(args));
   }
 
-  public static int run(String... args) {
+  private static int run(String... args) {
     var out = new PrintWriter(System.out, true);
     var err = new PrintWriter(System.err, true);
     return run(out, err, args);
   }
 
-  public static int run(PrintWriter out, PrintWriter err, String... args) {
+  private static int run(PrintWriter out, PrintWriter err, String... args) {
     try {
       var configuration = new Configuration(out, err).withParsingCommandLineArguments(args);
       var verbose = configuration.verbose();
@@ -58,7 +57,7 @@ public class Bach {
         bach.info(bach.tools().toString(2));
         return 0;
       }
-      for (var call : configuration.calls()) bach.run(call.command());
+      for (var call : configuration.calls()) bach.run(ToolCall.of(call.command()));
       return 0;
     } catch (Exception exception) {
       exception.printStackTrace(err);
@@ -161,15 +160,22 @@ public class Bach {
     configuration().printer().out().println(message);
   }
 
-  public void run(String name, List<String> arguments) {
-    debug(">> %s %s".formatted(name, String.join(" ", arguments)));
-    tools().get(name).run(this, arguments);
+  public void run(String tool, String... args) {
+    run(new ToolCall(tool, List.of(args)));
   }
 
-  public void run(List<String> command) {
-    if (command.isEmpty()) throw new IllegalArgumentException();
-    var arguments = new ArrayDeque<>(command);
-    var name = arguments.removeFirst();
-    run(name, arguments.stream().toList());
+  public void run(String tool, List<String> arguments) {
+    run(new ToolCall(tool, List.copyOf(arguments)));
+  }
+
+  public void run(String tool, ToolCall.Composer composer) {
+    run(composer.apply(new ToolCall(tool)));
+  }
+
+  public void run(ToolCall call) {
+    var name = call.name();
+    var arguments = call.arguments();
+    debug(">> %s %s".formatted(name, String.join(" ", arguments)));
+    tools().get(name).run(this, arguments);
   }
 }
