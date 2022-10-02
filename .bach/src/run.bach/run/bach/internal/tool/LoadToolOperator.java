@@ -1,4 +1,4 @@
-package run.bach.internal;
+package run.bach.internal.tool;
 
 import java.net.URI;
 import java.nio.file.Files;
@@ -10,6 +10,8 @@ import java.util.Optional;
 import run.bach.Bach;
 import run.bach.Configuration;
 import run.bach.Operator;
+import run.bach.internal.ExternalPropertiesStorage;
+import run.bach.internal.PathSupport;
 
 public record LoadToolOperator(String name) implements Operator {
 

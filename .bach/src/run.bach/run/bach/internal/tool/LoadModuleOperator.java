@@ -1,4 +1,4 @@
-package run.bach.internal;
+package run.bach.internal.tool;
 
 import run.bach.Bach;
 import run.bach.Operator;

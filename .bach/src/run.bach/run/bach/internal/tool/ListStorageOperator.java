@@ -1,4 +1,4 @@
-package run.bach.internal;
+package run.bach.internal.tool;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -16,6 +16,7 @@ import java.util.zip.ZipInputStream;
 import run.bach.Bach;
 import run.bach.Configuration;
 import run.bach.Operator;
+import run.bach.internal.ExternalPropertiesStorage;
 
 public record ListStorageOperator(String name) implements Operator {
   record CLI(Optional<Boolean> __help, Optional<String> storage) {

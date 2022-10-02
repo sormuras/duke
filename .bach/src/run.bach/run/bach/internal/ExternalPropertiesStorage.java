@@ -3,7 +3,7 @@ package run.bach.internal;
 import java.util.Scanner;
 import java.util.StringJoiner;
 
-interface ExternalPropertiesStorage {
+public interface ExternalPropertiesStorage {
 
   GitHub DEFAULT = new GitHub("sormuras", "bach-info", "HEAD");
 

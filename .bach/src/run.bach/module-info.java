@@ -1,6 +1,6 @@
 import java.util.spi.*;
 import run.bach.*;
-import run.bach.internal.*;
+import run.bach.internal.tool.*;
 
 /** Defines Bach's API. */
 module run.bach {

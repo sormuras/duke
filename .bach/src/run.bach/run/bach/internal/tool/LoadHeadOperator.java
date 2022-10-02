@@ -1,4 +1,4 @@
-package run.bach.internal;
+package run.bach.internal.tool;
 
 import java.net.URI;
 import java.util.List;

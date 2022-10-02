@@ -1,10 +1,11 @@
-package run.bach.internal;
+package run.bach.internal.tool;
 
 import java.lang.module.ModuleFinder;
 import java.util.List;
 import java.util.Set;
 import run.bach.Bach;
 import run.bach.Operator;
+import run.bach.internal.ModulesSupport;
 
 public record ListModulesOperator(String name) implements Operator {
 

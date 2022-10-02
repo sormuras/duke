@@ -1,4 +1,4 @@
-package run.bach.internal;
+package run.bach.internal.tool;
 
 import java.util.List;
 import run.bach.Bach;
