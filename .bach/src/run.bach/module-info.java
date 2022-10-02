@@ -1,9 +1,9 @@
-import bach.Bach.API.*;
-import bach.Bach.Browsing.*;
-import java.util.spi.ToolProvider;
+import java.util.spi.*;
+import run.bach.*;
+import run.bach.internal.*;
 
 /** Defines Bach's API. */
-module bach {
+module run.bach {
   requires transitive java.net.http;
   requires jdk.compiler;
   requires jdk.jartool;
@@ -12,7 +12,7 @@ module bach {
   requires jdk.jlink;
   requires jdk.jpackage;
 
-  exports bach;
+  exports run.bach;
 
   uses Creator;
   uses Library;
@@ -22,8 +22,8 @@ module bach {
   provides Operator with
       LoadFileOperator,
       LoadHeadOperator,
-      LoadMissingModulesOperator,
       LoadModuleOperator,
+      LoadModulesOperator,
       LoadTextOperator,
       ListLibrariesOperator,
       ListPathsOperator,

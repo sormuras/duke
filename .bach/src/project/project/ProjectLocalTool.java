@@ -1,4 +1,4 @@
-package bach.info;
+package project;
 
 import java.io.PrintWriter;
 import java.util.spi.ToolProvider;

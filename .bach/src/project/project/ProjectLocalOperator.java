@@ -1,9 +1,8 @@
-package bach.info;
-
-import bach.Bach.API;
-import bach.Bach.API.Operator;
+package project;
 
 import java.util.List;
+import run.bach.Bach;
+import run.bach.Operator;
 
 public class ProjectLocalOperator implements Operator {
   @Override
@@ -12,5 +11,5 @@ public class ProjectLocalOperator implements Operator {
   }
 
   @Override
-  public void operate(API bach, List<String> arguments) {}
+  public void operate(Bach bach, List<String> arguments) {}
 }

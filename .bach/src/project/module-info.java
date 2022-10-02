@@ -1,9 +1,9 @@
-import bach.Bach.API.*;
-import bach.info.*;
-import java.util.spi.ToolProvider;
+import java.util.spi.*;
+import project.*;
+import run.bach.*;
 
-module bach.info {
-  requires bach;
+module project {
+  requires run.bach;
 
   provides Creator with
       ProjectLocalCreator;

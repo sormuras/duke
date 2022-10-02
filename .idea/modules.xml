@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/bach.iml" filepath="$PROJECT_DIR$/.idea/bach.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/bach.info.iml" filepath="$PROJECT_DIR$/.idea/bach.info.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/duke.iml" filepath="$PROJECT_DIR$/.idea/duke.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/project.iml" filepath="$PROJECT_DIR$/.idea/project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/run.bach.iml" filepath="$PROJECT_DIR$/.idea/run.bach.iml" />
     </modules>
   </component>
 </project>

@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Bach (module bach.info)" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="bach.Bach" />
-    <module name="bach.info" />
+  <configuration default="false" name="Bach (run.bach)" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="run.bach.Bach" />
+    <module name="run.bach" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="bach.*" />

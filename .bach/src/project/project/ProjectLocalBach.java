@@ -1,10 +1,9 @@
-package bach.info;
+package project;
 
-import bach.Bach.API.DefaultImplementation;
-import bach.Bach.Configuration;
+import run.bach.*;
 
-class ProjectLocalImplementation extends DefaultImplementation {
-  ProjectLocalImplementation(Configuration configuration) {
+class ProjectLocalBach extends Bach {
+  ProjectLocalBach(Configuration configuration) {
     super(configuration);
   }
 
