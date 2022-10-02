@@ -23,7 +23,7 @@ class ProjectLocalBach extends Bach {
   }
 
   @Override
-  protected Toolbox createToolbox() {
-    return super.createToolbox();
+  protected Tools createTools() {
+    return super.createTools();
   }
 }

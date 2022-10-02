@@ -11,6 +11,6 @@ public record ListToolsOperator(String name) implements Operator {
 
   @Override
   public void operate(Bach bach, List<String> arguments) {
-    bach.info(bach.toolbox().toString(0));
+    bach.info(bach.tools().toString(0));
   }
 }

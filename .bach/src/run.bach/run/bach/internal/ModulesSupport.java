@@ -1,5 +1,8 @@
 package run.bach.internal;
 
+import static java.lang.ModuleLayer.defineModulesWithOneLoader;
+import static java.lang.module.Configuration.resolveAndBind;
+
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
@@ -11,6 +14,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface ModulesSupport {
+  static ModuleLayer buildModuleLayer(ModuleFinder finder, String... roots) {
+    var parentClassLoader = ModulesSupport.class.getClassLoader();
+    var parentModuleLayer = ModuleLayer.boot();
+    var parents = List.of(parentModuleLayer.configuration());
+    var configuration = resolveAndBind(ModuleFinder.of(), parents, finder, Set.of(roots));
+    var layers = List.of(parentModuleLayer);
+    var controller = defineModulesWithOneLoader(configuration, layers, parentClassLoader);
+    return controller.layer();
+  }
+
   static void consumeAllNames(ModuleFinder finder, Consumer<String> consumer) {
     finder.findAll().stream()
         .map(ModuleReference::descriptor)

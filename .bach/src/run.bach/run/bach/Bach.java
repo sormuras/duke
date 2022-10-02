@@ -40,22 +40,22 @@ public class Bach {
         }
         /* Toolbox */ {
           bach.info("Toolbox");
-          for (var finder : bach.toolbox().finders()) {
+          for (var finder : bach.tools().finders()) {
             var description = finder.description();
             var size = finder.findAll().size();
             bach.info("  %s [%2d]".formatted(description, size));
           }
-          var size = bach.toolbox().finders().size();
+          var size = bach.tools().finders().size();
           bach.info("    %d finder%s".formatted(size, size == 1 ? "" : "s"));
         }
       }
       if (configuration.help() || configuration.calls().isEmpty()) {
         bach.info(
-                """
-                Usage: bach [options] <tool> [args...] [+ <tool> [args...]]
-    
-                Available tools are:""");
-        bach.info(bach.toolbox().toString(2));
+            """
+            Usage: bach [options] <tool> [args...] [+ <tool> [args...]]
+
+            Available tools are:""");
+        bach.info(bach.tools().toString(2));
         return 0;
       }
       for (var call : configuration.calls()) bach.run(call.command());
@@ -77,14 +77,14 @@ public class Bach {
   private final Paths paths;
   private final Browser browser;
   private final Libraries libraries;
-  private final Toolbox toolbox;
+  private final Tools tools;
 
   public Bach(Configuration configuration) {
     this.configuration = configuration;
     this.paths = createPaths();
     this.browser = createBrowser();
     this.libraries = createLibraries();
-    this.toolbox = createToolbox();
+    this.tools = createTools();
   }
 
   protected Browser createBrowser() {
@@ -104,18 +104,33 @@ public class Bach {
     return Paths.ofRoot(configuration.projectDirectory());
   }
 
-  protected Toolbox createToolbox() {
+  protected Tools createTools() {
     var operators = new ArrayList<Tool>();
     ServiceLoader.load(Operator.class).forEach(it -> operators.add(Tool.of(it)));
     var providers = new ArrayList<Tool>();
     ServiceLoader.load(ToolProvider.class).forEach(it -> providers.add(Tool.of(it)));
 
+    var javaHome = paths.javaHome();
     var finders = new ArrayList<ToolFinder>();
-    finders.add(ToolFinder.of("Bach Operators", operators));
-    finders.add(ToolFinder.of("Tool Providers", providers));
-    finders.add(ToolFinder.ofJavaLauncherPrograms(paths.externalTools()));
-    finders.add(ToolFinder.ofNativeToolInJavaHome("java", "jfr", "jdeprscan"));
-    return new Toolbox(List.copyOf(finders));
+    finders.add(ToolFinder.ofTools("Bach Operator Services", operators));
+    finders.add(ToolFinder.ofTools("Tool Provider Services", providers));
+    finders.add(
+        ToolFinder.ofToolProviders(
+            "Tool Providers in " + paths.externalModules().toUri(), paths.externalModules()));
+    finders.add(
+        ToolFinder.ofJavaPrograms(
+            "Java Programs in " + paths.externalTools().toUri(),
+            paths.externalTools(),
+            javaHome.resolve("bin").resolve("java")));
+    finders.add(
+        ToolFinder.ofNativeTools(
+            "Native Tools in ${JAVA_HOME} -> " + javaHome.toUri(),
+            name -> "java.home/" + name, // ensure stable names with synthetic prefix
+            javaHome.resolve("bin"),
+            "java",
+            "jfr",
+            "jdeprscan"));
+    return new Tools(List.copyOf(finders));
   }
 
   public final Configuration configuration() {
@@ -134,8 +149,8 @@ public class Bach {
     return libraries;
   }
 
-  public final Toolbox toolbox() {
-    return toolbox;
+  public final Tools tools() {
+    return tools;
   }
 
   public void debug(Object message) {
@@ -148,7 +163,7 @@ public class Bach {
 
   public void run(String name, List<String> arguments) {
     debug(">> %s %s".formatted(name, String.join(" ", arguments)));
-    toolbox().get(name).run(this, arguments);
+    tools().get(name).run(this, arguments);
   }
 
   public void run(List<String> command) {
