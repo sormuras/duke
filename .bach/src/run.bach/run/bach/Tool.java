@@ -1,8 +1,8 @@
 package run.bach;
 
-import run.bach.internal.NativeProcessToolProvider;
 import java.util.List;
 import java.util.spi.ToolProvider;
+import run.bach.internal.NativeProcessToolProvider;
 
 public sealed interface Tool {
   String name();
