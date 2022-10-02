@@ -1,32 +1,44 @@
 package bach;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public record Bach(String name) implements ToolProvider {
 
-  public static final String VERSION = "2022.10.01";
+  public static final String VERSION = "2022.10.02";
 
   public static void main(String... args) {
     System.exit(run(args));
@@ -56,16 +68,19 @@ public record Bach(String name) implements ToolProvider {
       }
       var bach = API.of(configuration);
       if (verbose) {
-        bach.info("Paths");
-        bach.info(bach.paths().toString(2));
-        var finders = bach.toolbox().finders();
-        var size = finders.size();
-        bach.info("Toolbox with %d tool finder instance%s".formatted(size, size == 1 ? "" : "s"));
-        for (var finder : finders) {
-          size = finder.findAll().size();
-          var info = finder.description();
-          var type = finder.getClass().getSimpleName();
-          bach.info("  %2d tool%s in %s [%s]".formatted(size, size == 1 ? "" : "s", info, type));
+        /* Paths */ {
+          bach.info("Paths");
+          bach.info(bach.paths().toString(2));
+        }
+        /* Toolbox */ {
+          bach.info("Toolbox");
+          for (var finder : bach.toolbox().finders()) {
+            var description = finder.description();
+            var size = finder.findAll().size();
+            bach.info("  %s [%2d]".formatted(description, size));
+          }
+          var size = bach.toolbox().finders().size();
+          bach.info("    %d finder%s".formatted(size, size == 1 ? "" : "s"));
         }
       }
       if (configuration.help() || configuration.calls().isEmpty()) {
@@ -85,7 +100,6 @@ public record Bach(String name) implements ToolProvider {
     }
   }
 
-  /** The command-line interface definition and also its runtime representation. */
   public record Configuration(
       Printer printer,
       Optional<Boolean> __help,
@@ -337,6 +351,156 @@ public record Bach(String name) implements ToolProvider {
         return !modifiers.contains(ModuleDescriptor.Requires.Modifier.STATIC);
       }
     }
+
+    record OperatingSystem(Name name, Architecture architecture) {
+
+      public enum Name {
+        ANY(".*"),
+        LINUX("^linux.*"),
+        MAC("^(macos|osx|darwin).*"),
+        WINDOWS("^windows.*");
+
+        private final String identifier;
+        private final Pattern pattern;
+
+        Name(String regex) {
+          this.identifier = name().toLowerCase(Locale.ROOT);
+          this.pattern = Pattern.compile(regex);
+        }
+
+        boolean matches(String string) {
+          return pattern.matcher(string).matches();
+        }
+
+        @Override
+        public String toString() {
+          return identifier;
+        }
+
+        public static Name ofSystem() {
+          return of(System.getProperty("os.name", "").toLowerCase(Locale.ROOT));
+        }
+
+        public static Name of(String string) {
+          var normalized = string.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "");
+          return Stream.of(LINUX, MAC, WINDOWS)
+              .filter(platform -> platform.matches(normalized))
+              .findFirst()
+              .orElseThrow(
+                  () -> new IllegalArgumentException("Unknown operating system: " + string));
+        }
+      }
+
+      public enum Architecture {
+        ANY(".*"),
+        ARM_32("^(arm|arm32)$"),
+        ARM_64("^(aarch64|arm64)$"),
+        X86_32("^(x8632|x86|i[3-6]86|ia32|x32)$"),
+        X86_64("^(x8664|amd64|ia32e|em64t|x64)$");
+
+        private final String identifier;
+        private final Pattern pattern;
+
+        Architecture(String regex) {
+          this.identifier = name().toLowerCase(Locale.ROOT);
+          this.pattern = Pattern.compile(regex);
+        }
+
+        boolean matches(String string) {
+          return pattern.matcher(string).matches();
+        }
+
+        @Override
+        public String toString() {
+          return identifier;
+        }
+
+        public static Architecture ofSystem() {
+          return of(System.getProperty("os.arch", ""));
+        }
+
+        public static Architecture of(String string) {
+          var normalized = string.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "");
+          return Stream.of(X86_64, ARM_64, X86_32, ARM_32)
+              .filter(architecture -> architecture.matches(normalized))
+              .findFirst()
+              .orElseThrow(() -> new IllegalArgumentException("Unknown architecture: " + string));
+        }
+      }
+
+      public static final OperatingSystem ANY = new OperatingSystem(Name.ANY, Architecture.ANY);
+
+      public static final OperatingSystem SYSTEM =
+          new OperatingSystem(Name.ofSystem(), Architecture.ofSystem());
+
+      public static OperatingSystem of(String classifier) {
+        if (classifier == null || classifier.isEmpty()) return ANY;
+        var index = classifier.indexOf('-');
+        return index == -1
+            ? new OperatingSystem(Name.of(classifier), Architecture.ANY)
+            : new OperatingSystem(
+                Name.of(classifier.substring(0, index)),
+                Architecture.of(classifier.substring(index + 1)));
+      }
+    }
+
+    interface PathSupport {
+      static String checksum(Path file, String algorithm) {
+        if (Files.notExists(file)) throw new RuntimeException("File not found: " + file);
+        try {
+          if ("size".equalsIgnoreCase(algorithm)) return Long.toString(Files.size(file));
+          var md = MessageDigest.getInstance(algorithm);
+          try (var source = new BufferedInputStream(new FileInputStream(file.toFile()));
+              var target = new DigestOutputStream(OutputStream.nullOutputStream(), md)) {
+            source.transferTo(target);
+          }
+          var format = "%0" + (md.getDigestLength() * 2) + "x";
+          return String.format(format, new BigInteger(1, md.digest()));
+        } catch (Exception exception) {
+          throw new RuntimeException(exception);
+        }
+      }
+
+      static boolean isJarFile(Path path) {
+        return name(path, "").endsWith(".jar") && Files.isRegularFile(path);
+      }
+
+      static boolean isJavaFile(Path path) {
+        return name(path, "").endsWith(".java") && Files.isRegularFile(path);
+      }
+
+      static boolean isPropertiesFile(Path path) {
+        return name(path, "").endsWith(".properties") && Files.isRegularFile(path);
+      }
+
+      static List<Path> list(Path directory, DirectoryStream.Filter<? super Path> filter) {
+        if (Files.notExists(directory)) return List.of();
+        var paths = new TreeSet<>(Comparator.comparing(Path::toString));
+        try (var stream = Files.newDirectoryStream(directory, filter)) {
+          stream.forEach(paths::add);
+        } catch (Exception exception) {
+          throw new RuntimeException(exception);
+        }
+        return List.copyOf(paths);
+      }
+
+      static Properties properties(Path file) {
+        var properties = new Properties();
+        try {
+          properties.load(new StringReader(Files.readString(file)));
+        } catch (Exception exception) {
+          throw new RuntimeException(exception);
+        }
+        return properties;
+      }
+
+      static String name(Path path, String defaultName) {
+        var normalized = path.normalize();
+        var candidate = normalized.toString().isEmpty() ? normalized.toAbsolutePath() : normalized;
+        var name = candidate.getFileName();
+        return name != null ? name.toString() : defaultName;
+      }
+    }
   }
 
   public sealed interface Browsing extends Basic {
@@ -444,7 +608,7 @@ public record Bach(String name) implements ToolProvider {
             bach.debug("Already");
             continue; // with next module
           }
-          for (var locator : bach.locators().list()) {
+          for (var locator : bach.libraries().list()) {
             var location = locator.locate(module);
             if (location == null) continue; // with next locator
             bach.debug("Module %s located via %s".formatted(module, locator.description()));
@@ -597,20 +761,20 @@ public record Bach(String name) implements ToolProvider {
           .createBach(configuration);
     }
 
-    Locators locators();
+    Libraries libraries();
 
     non-sealed class DefaultImplementation implements API {
       private final Configuration configuration;
       private final Paths paths;
       private final Browser browser;
-      private final Locators locators;
+      private final Libraries libraries;
       private final Toolbox toolbox;
 
       public DefaultImplementation(Configuration configuration) {
         this.configuration = configuration;
         this.paths = createPaths();
         this.browser = createBrowser();
-        this.locators = createLocators();
+        this.libraries = createLibraries();
         this.toolbox = createToolbox();
       }
 
@@ -618,10 +782,13 @@ public record Bach(String name) implements ToolProvider {
         return new Browser();
       }
 
-      protected Locators createLocators() {
-        var locators = new ArrayList<Locator>();
-        ServiceLoader.load(API.Locator.class).forEach(locators::add);
-        return new Locators(List.copyOf(locators));
+      protected Libraries createLibraries() {
+        var libraries = new ArrayList<Library>();
+        ServiceLoader.load(Library.class).forEach(libraries::add);
+        PathSupport.list(paths().externalModules(), PathSupport::isPropertiesFile).stream()
+            .map(Library::ofProperties)
+            .forEach(libraries::add);
+        return new Libraries(List.copyOf(libraries));
       }
 
       protected Paths createPaths() {
@@ -656,8 +823,8 @@ public record Bach(String name) implements ToolProvider {
       }
 
       @Override
-      public final Locators locators() {
-        return locators;
+      public final Libraries libraries() {
+        return libraries;
       }
 
       @Override
@@ -677,20 +844,60 @@ public record Bach(String name) implements ToolProvider {
       API createBach(Configuration configuration);
     }
 
-    /** An external module locator links module names to their remote locations. */
-    interface Locator {
-      String locate(String name);
+    /** An external module library maps module names to their remote locations. */
+    @FunctionalInterface
+    interface Library {
+      default String locate(String name) {
+        return locate(name, OperatingSystem.SYSTEM);
+      }
+
+      String locate(String name, OperatingSystem os);
 
       default String description() {
         return getClass().getSimpleName();
       }
+
+      static Library ofProperties(Path file) {
+        record PropertiesLibrary(String description, Properties properties) implements Library {
+          @Override
+          public String locate(String module, OperatingSystem os) {
+            var key = module + '|' + os.name();
+            {
+              var location = properties.getProperty(key + '-' + os.architecture());
+              if (location != null) return location;
+            }
+            {
+              var location = properties.getProperty(key);
+              if (location != null) return location;
+            }
+            return properties.getProperty(module);
+          }
+        }
+        var properties = PathSupport.properties(file);
+        var annotation =
+            Optional.ofNullable(properties.remove("@description"))
+                .map(Object::toString)
+                .orElse(PathSupport.name(file, "?").replace(".properties", ""));
+        var modules = new TreeSet<String>();
+        for (var name : properties.stringPropertyNames()) {
+          if (name.startsWith("@")) {
+            properties.remove(name);
+            continue;
+          }
+          var index = name.indexOf('|');
+          modules.add(index <= 0 ? name : name.substring(0, index));
+        }
+        var description =
+            "%s [%d/%d] %s".formatted(annotation, modules.size(), properties.size(), file.toUri());
+        return new PropertiesLibrary(description, properties);
+      }
     }
 
-    record Locators(List<Locator> list) {
+    record Libraries(List<Library> list) {
       public String toString(int indent) {
         var joiner = new StringJoiner("\n");
         list.forEach(locator -> joiner.add(locator.description()));
-        joiner.add("    %d locator%s".formatted(list.size(), list.size() == 1 ? "" : "s"));
+        joiner.add("    %d librar%s".formatted(list.size(), list.size() == 1 ? "y" : "ies"));
         return joiner.toString().indent(indent).stripTrailing();
       }
     }
@@ -733,14 +940,14 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
-    record ListLocatorsOperator(String name) implements Operator {
-      public ListLocatorsOperator() {
-        this("list-locators");
+    record ListLibrariesOperator(String name) implements Operator {
+      public ListLibrariesOperator() {
+        this("list-libraries");
       }
 
       @Override
       public void operate(API bach, List<String> arguments) {
-        bach.info(bach.locators().toString(0));
+        bach.info(bach.libraries().toString(0));
       }
     }
 

@@ -15,7 +15,7 @@ module bach {
   exports bach;
 
   uses Creator;
-  uses Locator;
+  uses Library;
   uses Operator;
   uses ToolProvider;
 
@@ -25,7 +25,7 @@ module bach {
       LoadMissingModulesOperator,
       LoadModuleOperator,
       LoadTextOperator,
-      ListLocatorsOperator,
+      ListLibrariesOperator,
       ListPathsOperator,
       ListModulesOperator,
       ListToolsOperator;
