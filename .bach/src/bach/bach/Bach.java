@@ -382,6 +382,53 @@ public record Bach(String name) implements ToolProvider {
       }
     }
 
+    record LoadFileOperator(String name) implements API.Operator {
+      public LoadFileOperator() {
+        this("load-file");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<from-uri> [<to-path>]")) return;
+        var uri = URI.create(arguments.get(0));
+        var path = Path.of(arguments.get(1));
+        var response = bach.browser().load(uri, path);
+        if (Files.notExists(response.body())) throw new RuntimeException(response.toString());
+      }
+    }
+
+    record LoadHeadOperator(String name) implements API.Operator {
+      public LoadHeadOperator() {
+        this("load-head");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<uris...>")) return;
+        for (var argument : arguments) {
+          var uri = URI.create(argument);
+          var head = bach.browser().head(uri);
+          bach.info(head);
+          for (var entry : head.headers().map().entrySet()) {
+            bach.debug(entry.getKey());
+            for (var line : entry.getValue()) bach.debug("  " + line);
+          }
+        }
+      }
+    }
+
+    record LoadTextOperator(String name) implements API.Operator {
+      public LoadTextOperator() {
+        this("load-text");
+      }
+
+      @Override
+      public void operate(API bach, List<String> arguments) {
+        if (help(bach, arguments, "<uris...>")) return;
+        bach.info(bach.browser().read(URI.create(arguments.get(0))));
+      }
+    }
+
     record LoadModuleOperator(String name) implements API.Operator {
       public LoadModuleOperator() {
         this("load-module");
@@ -748,53 +795,6 @@ public record Bach(String name) implements ToolProvider {
         var systemModules = systemModuleFinder.findAll();
         ModulesSupport.consumeAllNames(systemModuleFinder, bach::debug);
         bach.info("    %d system modules".formatted(systemModules.size()));
-      }
-    }
-
-    record LoadFileOperator(String name) implements Operator {
-      public LoadFileOperator() {
-        this("load-file");
-      }
-
-      @Override
-      public void operate(API bach, List<String> arguments) {
-        if (help(bach, arguments, "<from-uri> [<to-path>]")) return;
-        var uri = URI.create(arguments.get(0));
-        var path = Path.of(arguments.get(1));
-        var response = bach.browser().load(uri, path);
-        if (Files.notExists(response.body())) throw new RuntimeException(response.toString());
-      }
-    }
-
-    record LoadHeadOperator(String name) implements Operator {
-      public LoadHeadOperator() {
-        this("load-head");
-      }
-
-      @Override
-      public void operate(API bach, List<String> arguments) {
-        if (help(bach, arguments, "<uris...>")) return;
-        for (var argument : arguments) {
-          var uri = URI.create(argument);
-          var head = bach.browser().head(uri);
-          bach.info(head);
-          for (var entry : head.headers().map().entrySet()) {
-            bach.debug(entry.getKey());
-            for (var line : entry.getValue()) bach.debug("  " + line);
-          }
-        }
-      }
-    }
-
-    record LoadTextOperator(String name) implements Operator {
-      public LoadTextOperator() {
-        this("load-text");
-      }
-
-      @Override
-      public void operate(API bach, List<String> arguments) {
-        if (help(bach, arguments, "<uris...>")) return;
-        bach.info(bach.browser().read(URI.create(arguments.get(0))));
       }
     }
 
