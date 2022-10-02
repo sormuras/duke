@@ -69,7 +69,7 @@ public record LoadToolOperator(String name) implements Operator {
       bach.info("Usage: bach %s [--from <store>] <tool-names...>".formatted(name()));
       return;
     }
-    var directory = bach.paths().externalModules();
+    var directory = bach.paths().externalTools();
     var storage = cli.fromExternalPropertiesStorage();
     bach.debug("Load from %s".formatted(storage));
     for (var name : cli.names()) {
