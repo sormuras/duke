@@ -8,6 +8,7 @@ module project {
   provides Creator with
       ProjectLocalCreator;
   provides Operator with
+      format,
       ProjectLocalJarOperator,
       ProjectLocalOperator;
   provides ToolProvider with
