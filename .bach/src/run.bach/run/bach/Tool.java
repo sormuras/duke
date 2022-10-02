@@ -1,5 +1,6 @@
 package run.bach;
 
+import run.bach.internal.NativeProcessToolProvider;
 import java.util.List;
 import java.util.spi.ToolProvider;
 
@@ -23,6 +24,10 @@ public sealed interface Tool {
 
   static Tool of(ToolProvider provider) {
     return new ToolProviderTool(prefixIfNeeded(provider.name(), provider), provider);
+  }
+
+  static Tool ofNativeProcess(String name, List<String> command) {
+    return Tool.of(new NativeProcessToolProvider(name, command));
   }
 
   private static String prefixIfNeeded(String name, Object object) {

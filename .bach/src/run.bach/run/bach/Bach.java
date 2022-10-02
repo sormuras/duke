@@ -113,6 +113,8 @@ public class Bach {
     var finders = new ArrayList<ToolFinder>();
     finders.add(ToolFinder.of("Bach Operators", operators));
     finders.add(ToolFinder.of("Tool Providers", providers));
+    finders.add(ToolFinder.ofJavaLauncherPrograms(paths.externalTools()));
+    finders.add(ToolFinder.ofNativeToolInJavaHome("java", "jfr", "jdeprscan"));
     return new Toolbox(List.copyOf(finders));
   }
 
