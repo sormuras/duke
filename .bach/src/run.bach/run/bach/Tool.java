@@ -41,6 +41,7 @@ public sealed interface Tool {
     @Override
     public void run(Bach bach, List<String> arguments) {
       var printer = bach.configuration().printer();
+      Thread.currentThread().setContextClassLoader(provider.getClass().getClassLoader());
       provider.run(printer.out(), printer.err(), arguments.toArray(String[]::new));
     }
   }
