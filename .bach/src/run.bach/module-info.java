@@ -26,9 +26,9 @@ module run.bach {
       LoadModuleOperator,
       LoadModulesOperator,
       LoadTextOperator,
-      ListLibrariesOperator,
       ListPathsOperator,
       ListModulesOperator,
+      ListStorageOperator,
       ListToolsOperator;
   provides ToolProvider with
       ListFilesTool,
