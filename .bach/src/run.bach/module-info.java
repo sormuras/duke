@@ -26,6 +26,7 @@ module run.bach {
       LoadModuleOperator,
       LoadModulesOperator,
       LoadTextOperator,
+      LoadToolOperator,
       ListPathsOperator,
       ListModulesOperator,
       ListStorageOperator,
