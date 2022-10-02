@@ -9,32 +9,17 @@ import run.bach.internal.PathSupport;
 /** An external module library maps module names to their remote locations. */
 @FunctionalInterface
 public interface Library {
+  String locate(String name, OperatingSystem os);
+
   default String locate(String name) {
     return locate(name, OperatingSystem.SYSTEM);
   }
-
-  String locate(String name, OperatingSystem os);
 
   default String description() {
     return getClass().getSimpleName();
   }
 
   static Library ofProperties(Path file) {
-    record PropertiesLibrary(String description, Properties properties) implements Library {
-      @Override
-      public String locate(String module, OperatingSystem os) {
-        var key = module + '|' + os.name();
-        {
-          var location = properties.getProperty(key + '-' + os.architecture());
-          if (location != null) return location;
-        }
-        {
-          var location = properties.getProperty(key);
-          if (location != null) return location;
-        }
-        return properties.getProperty(module);
-      }
-    }
     var properties = PathSupport.properties(file);
     var annotation =
         Optional.ofNullable(properties.remove("@description"))
@@ -52,5 +37,21 @@ public interface Library {
     var description =
         "%s [%d/%d] %s".formatted(annotation, modules.size(), properties.size(), file.toUri());
     return new PropertiesLibrary(description, properties);
+  }
+
+  record PropertiesLibrary(String description, Properties properties) implements Library {
+    @Override
+    public String locate(String module, OperatingSystem os) {
+      var moduleAndOperatingSystem = module + '|' + os.name();
+      {
+        var location = properties.getProperty(moduleAndOperatingSystem + '-' + os.architecture());
+        if (location != null) return location;
+      }
+      {
+        var location = properties.getProperty(moduleAndOperatingSystem);
+        if (location != null) return location;
+      }
+      return properties.getProperty(module);
+    }
   }
 }
