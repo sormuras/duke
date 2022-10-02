@@ -73,7 +73,7 @@ public record ListStorageOperator(String name) implements Operator {
     var renderer =
         cli.storage()
             .map(storage -> StorageInspector.of(bach, ExternalPropertiesStorage.of(storage)))
-            .orElseGet(() -> StorageInspector.of(bach.paths().externalModules()));
+            .orElseGet(() -> StorageInspector.of(bach.paths().root()));
     bach.info(renderer.toString(0));
   }
 
