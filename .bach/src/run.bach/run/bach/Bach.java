@@ -23,9 +23,11 @@ public class Bach {
 
   private static int run(PrintWriter out, PrintWriter err, String... args) {
     try {
-      var configuration = new Configuration(out, err).withParsingCommandLineArguments(args);
-      var verbose = configuration.verbose();
-      var version = configuration.version();
+      var cli = new CLI().withParsingCommandLineArguments(args);
+      var printer = new Printer(cli.printerThreshold(), out, err);
+      var configuration = new Configuration(cli, printer);
+      var verbose = cli.verbose();
+      var version = cli.version();
       if (verbose || version) {
         out.println("Bach " + VERSION);
         if (version) return 0;
@@ -48,7 +50,7 @@ public class Bach {
           bach.info("    %d finder%s".formatted(size, size == 1 ? "" : "s"));
         }
       }
-      if (configuration.help() || configuration.calls().isEmpty()) {
+      if (cli.help() || cli.calls().isEmpty()) {
         bach.info(
             """
             Usage: bach [options] <tool> [args...] [+ <tool> [args...]]
@@ -57,7 +59,7 @@ public class Bach {
         bach.info(bach.tools().toString(2));
         return 0;
       }
-      for (var call : configuration.calls()) bach.run(ToolCall.of(call.command()));
+      for (var call : cli.calls()) bach.run(ToolCall.of(call.command()));
       return 0;
     } catch (Exception exception) {
       exception.printStackTrace(err);
@@ -100,7 +102,7 @@ public class Bach {
   }
 
   protected Paths createPaths() {
-    return Paths.ofRoot(configuration.projectDirectory());
+    return Paths.ofRoot(configuration.cli().projectDirectory());
   }
 
   protected Tools createTools() {
@@ -153,11 +155,11 @@ public class Bach {
   }
 
   public void debug(Object message) {
-    if (configuration().verbose()) configuration().printer().out().println(message);
+    configuration().printer().println(System.Logger.Level.DEBUG, message.toString());
   }
 
   public void info(Object message) {
-    configuration().printer().out().println(message);
+    configuration().printer().println(System.Logger.Level.INFO, message.toString());
   }
 
   public void run(String tool, String... args) {

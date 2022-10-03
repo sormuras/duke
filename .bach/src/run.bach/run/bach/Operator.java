@@ -11,7 +11,7 @@ public interface Operator {
   }
 
   default boolean help(Bach bach, List<String> arguments, String options) {
-    if (arguments.isEmpty() || Configuration.isFirstArgumentHelpOptionName(arguments)) {
+    if (arguments.isEmpty() || CLI.isFirstArgumentHelpOptionName(arguments)) {
       bach.info("Usage: bach %s [?] %s".formatted(name(), options));
       return true;
     }

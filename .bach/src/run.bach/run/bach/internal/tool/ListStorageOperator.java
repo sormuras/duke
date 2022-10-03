@@ -14,7 +14,6 @@ import java.util.StringJoiner;
 import java.util.stream.Stream;
 import java.util.zip.ZipInputStream;
 import run.bach.Bach;
-import run.bach.Configuration;
 import run.bach.Operator;
 import run.bach.internal.ExternalPropertiesStorage;
 
@@ -37,7 +36,7 @@ public record ListStorageOperator(String name) implements Operator {
       while (!arguments.isEmpty()) {
         var argument = arguments.removeFirst();
         /* parse flags */ {
-          if (Configuration.HELP_FLAGS.contains(argument)) {
+          if (run.bach.CLI.HELP_FLAGS.contains(argument)) {
             help = Boolean.TRUE;
             continue;
           }
