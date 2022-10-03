@@ -75,6 +75,7 @@ public class Bach {
   }
 
   private final Configuration configuration;
+  private final Logbook logbook;
   private final Paths paths;
   private final Browser browser;
   private final Libraries libraries;
@@ -82,10 +83,13 @@ public class Bach {
 
   public Bach(Configuration configuration) {
     this.configuration = configuration;
+    this.logbook = createLogbook();
     this.paths = createPaths();
     this.browser = createBrowser();
     this.libraries = createLibraries();
     this.tools = createTools();
+
+    logbook.log(System.Logger.Level.TRACE, "Created instance of " + getClass());
   }
 
   protected Browser createBrowser() {
@@ -99,6 +103,10 @@ public class Bach {
         .map(Library::ofProperties)
         .forEach(libraries::add);
     return new Libraries(List.copyOf(libraries));
+  }
+
+  protected Logbook createLogbook() {
+    return new Logbook();
   }
 
   protected Paths createPaths() {
@@ -150,16 +158,26 @@ public class Bach {
     return libraries;
   }
 
+  public final Logbook logbook() {
+    return logbook;
+  }
+
   public final Tools tools() {
     return tools;
   }
 
   public void debug(Object message) {
-    configuration().printer().println(System.Logger.Level.DEBUG, message.toString());
+    log(System.Logger.Level.DEBUG, message);
   }
 
   public void info(Object message) {
-    configuration().printer().println(System.Logger.Level.INFO, message.toString());
+    log(System.Logger.Level.INFO, message);
+  }
+
+  public void log(System.Logger.Level level, Object message) {
+    var text = String.valueOf(message);
+    logbook().log(level, text);
+    configuration().printer().println(level, text);
   }
 
   public void run(String tool, String... args) {

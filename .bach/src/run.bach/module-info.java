@@ -30,7 +30,8 @@ module run.bach {
       ListPathsOperator,
       ListModulesOperator,
       ListStorageOperator,
-      ListToolsOperator;
+      ListToolsOperator,
+      ShowLogbookOperator;
   provides ToolProvider with
       ListFilesTool,
       TreeCreateTool,
