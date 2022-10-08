@@ -2,9 +2,9 @@ package project;
 
 import java.util.List;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 
-public record ProjectLocalJarOperator(String name) implements Operator {
+public record ProjectLocalJarOperator(String name) implements BachOperator {
   public ProjectLocalJarOperator() {
     this("jar");
   }

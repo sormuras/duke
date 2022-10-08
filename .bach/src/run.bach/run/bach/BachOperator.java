@@ -3,7 +3,7 @@ package run.bach;
 import java.util.List;
 
 @FunctionalInterface
-public interface Operator {
+public interface BachOperator {
   void operate(Bach bach, List<String> arguments);
 
   default String name() {

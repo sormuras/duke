@@ -16,7 +16,7 @@ public sealed interface Tool {
     return name().equals(string) || name().endsWith('/' + string);
   }
 
-  static Tool of(Operator operator) {
+  static Tool of(BachOperator operator) {
     return new BachOperatorTool(prefixIfNeeded(operator.name(), operator), operator);
   }
 
@@ -37,5 +37,5 @@ public sealed interface Tool {
 
   record ToolProviderTool(String name, ToolProvider provider) implements Tool {}
 
-  record BachOperatorTool(String name, Operator operator) implements Tool {}
+  record BachOperatorTool(String name, BachOperator operator) implements Tool {}
 }

@@ -3,9 +3,9 @@ package run.bach.internal.tool;
 import java.net.URI;
 import java.util.List;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 
-public record LoadTextOperator(String name) implements Operator {
+public record LoadTextOperator(String name) implements BachOperator {
   public LoadTextOperator() {
     this("load-text");
   }

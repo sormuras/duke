@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 import run.bach.internal.ExternalPropertiesStorage;
 
-public record LoadLibraryOperator(String name) implements Operator {
+public record LoadLibraryOperator(String name) implements BachOperator {
   public LoadLibraryOperator() {
     this("load-library");
   }

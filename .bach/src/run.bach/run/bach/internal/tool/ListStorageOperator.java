@@ -14,10 +14,10 @@ import java.util.StringJoiner;
 import java.util.stream.Stream;
 import java.util.zip.ZipInputStream;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 import run.bach.internal.ExternalPropertiesStorage;
 
-public record ListStorageOperator(String name) implements Operator {
+public record ListStorageOperator(String name) implements BachOperator {
   record CLI(Optional<Boolean> __help, Optional<String> storage) {
     CLI() {
       this(Optional.empty(), Optional.empty());

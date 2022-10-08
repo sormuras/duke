@@ -16,10 +16,10 @@ module run.bach {
 
   uses Creator;
   uses Library;
-  uses Operator;
+  uses BachOperator;
   uses ToolProvider;
 
-  provides Operator with
+  provides BachOperator with
       LoadFileOperator,
       LoadHeadOperator,
       LoadLibraryOperator,

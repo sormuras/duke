@@ -7,7 +7,7 @@ module project {
 
   provides Creator with
       ProjectLocalCreator;
-  provides Operator with
+  provides BachOperator with
       format,
       ProjectLocalJarOperator,
       ProjectLocalOperator;

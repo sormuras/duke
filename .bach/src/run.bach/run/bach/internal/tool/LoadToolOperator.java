@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 import run.bach.internal.ExternalPropertiesStorage;
 import run.bach.internal.PathSupport;
 
-public record LoadToolOperator(String name) implements Operator {
+public record LoadToolOperator(String name) implements BachOperator {
 
   record CLI(Optional<Boolean> __help, Optional<String> __from, List<String> names) {
     CLI() {

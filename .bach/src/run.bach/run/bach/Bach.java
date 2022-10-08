@@ -100,7 +100,7 @@ public class Bach {
 
   protected Tools createTools() {
     var operators = new ArrayList<Tool>();
-    ServiceLoader.load(Operator.class).forEach(it -> operators.add(Tool.of(it)));
+    ServiceLoader.load(BachOperator.class).forEach(it -> operators.add(Tool.of(it)));
     var providers = new ArrayList<Tool>();
     ServiceLoader.load(ToolProvider.class).forEach(it -> providers.add(Tool.of(it)));
 
@@ -193,7 +193,7 @@ public class Bach {
     throw new UnsupportedOperationException(tool.getClass().getCanonicalName());
   }
 
-  void runBachOperator(Operator operator, List<String> arguments) {
+  void runBachOperator(BachOperator operator, List<String> arguments) {
     operator.operate(this, arguments);
   }
 

@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 import run.bach.internal.ModulesSupport;
 
-public record LoadModulesOperator(String name) implements Operator {
+public record LoadModulesOperator(String name) implements BachOperator {
   public LoadModulesOperator() {
     this("load-modules");
   }

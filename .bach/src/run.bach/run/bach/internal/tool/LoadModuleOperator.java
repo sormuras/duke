@@ -4,9 +4,9 @@ import java.lang.module.ModuleFinder;
 import java.net.URI;
 import java.util.List;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 
-public record LoadModuleOperator(String name) implements Operator {
+public record LoadModuleOperator(String name) implements BachOperator {
   public LoadModuleOperator() {
     this("load-module");
   }

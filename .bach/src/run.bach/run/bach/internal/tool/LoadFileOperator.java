@@ -5,9 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import run.bach.Bach;
-import run.bach.Operator;
+import run.bach.BachOperator;
 
-public record LoadFileOperator(String name) implements Operator {
+public record LoadFileOperator(String name) implements BachOperator {
   public LoadFileOperator() {
     this("load-file");
   }
