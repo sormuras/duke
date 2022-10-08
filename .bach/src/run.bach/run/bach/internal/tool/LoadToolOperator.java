@@ -93,7 +93,12 @@ public record LoadToolOperator(String name) implements BachOperator {
     var parent = file.resolveSibling(name.substring(0, name.length() - 11));
     for (var key : properties.stringPropertyNames()) {
       if (key.startsWith("@")) continue;
-      var source = URI.create(properties.getProperty(key));
+      var value = properties.getProperty(key);
+      if (!value.startsWith("http")) {
+        bach.debug("Unsupported protocol: " + value);
+        continue;
+      }
+      var source = URI.create(value);
       var target = parent.resolve(key);
       if (Files.exists(target)) continue;
       bach.info("load %s".formatted(source));
