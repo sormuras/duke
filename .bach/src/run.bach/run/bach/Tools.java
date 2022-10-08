@@ -37,4 +37,16 @@ public record Tools(List<ToolFinder> finders) {
     joiner.add("    %d tool%s".formatted(size, size == 1 ? "" : "s"));
     return joiner.toString().indent(indent).stripTrailing();
   }
+
+  public String toFindersString(int indent) {
+    var joiner = new StringJoiner("\n");
+    for (var finder : finders) {
+      var description = finder.description();
+      var tools = finder.findAll().size();
+      joiner.add("%s [%d]".formatted(description, tools));
+    }
+    var size = finders.size();
+    joiner.add("    %d finder%s".formatted(size, size == 1 ? "" : "s"));
+    return joiner.toString().indent(indent).stripTrailing();
+  }
 }

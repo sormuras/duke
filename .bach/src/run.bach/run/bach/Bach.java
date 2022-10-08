@@ -9,7 +9,7 @@ import run.bach.internal.PathSupport;
 
 public class Bach {
 
-  public static final String VERSION = "2022.10.02";
+  public static final String VERSION = "2022.10.08";
 
   public static void main(String... args) {
     System.exit(run(args));
@@ -34,22 +34,6 @@ public class Bach {
         out.println(configuration.toString(0));
       }
       var bach = of(configuration);
-      if (verbose) {
-        /* Paths */ {
-          bach.info("Paths");
-          bach.info(bach.paths().toString(2));
-        }
-        /* Toolbox */ {
-          bach.info("Toolbox");
-          for (var finder : bach.tools().finders()) {
-            var description = finder.description();
-            var size = finder.findAll().size();
-            bach.info("  %s [%2d]".formatted(description, size));
-          }
-          var size = bach.tools().finders().size();
-          bach.info("    %d finder%s".formatted(size, size == 1 ? "" : "s"));
-        }
-      }
       if (cli.help() || cli.calls().isEmpty()) {
         bach.info(
             """
@@ -89,7 +73,8 @@ public class Bach {
     this.libraries = createLibraries();
     this.tools = createTools();
 
-    logbook.log(System.Logger.Level.TRACE, "Created instance of " + getClass());
+    debug("Created instance of " + getClass());
+    debug(toString(0));
   }
 
   protected Browser createBrowser() {
@@ -197,5 +182,17 @@ public class Bach {
     var arguments = call.arguments();
     debug(">> %s %s".formatted(name, String.join(" ", arguments)));
     tools().get(name).run(this, arguments);
+  }
+
+  public String toString(int indent) {
+    return """
+            Paths
+            %s
+            Tool Finders
+            %s
+            """
+        .formatted(paths.toString(indent + 2), tools.toFindersString(indent + 2))
+        .indent(indent)
+        .stripTrailing();
   }
 }
