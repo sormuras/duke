@@ -16,8 +16,6 @@ public sealed interface Tool {
     return name().equals(string) || name().endsWith('/' + string);
   }
 
-  void run(Bach bach, List<String> arguments);
-
   static Tool of(Operator operator) {
     return new BachOperatorTool(prefixIfNeeded(operator.name(), operator), operator);
   }
@@ -37,19 +35,7 @@ public sealed interface Tool {
     return prefix + '/' + name;
   }
 
-  record ToolProviderTool(String name, ToolProvider provider) implements Tool {
-    @Override
-    public void run(Bach bach, List<String> arguments) {
-      var printer = bach.configuration().printer();
-      Thread.currentThread().setContextClassLoader(provider.getClass().getClassLoader());
-      provider.run(printer.out(), printer.err(), arguments.toArray(String[]::new));
-    }
-  }
+  record ToolProviderTool(String name, ToolProvider provider) implements Tool {}
 
-  record BachOperatorTool(String name, Operator operator) implements Tool {
-    @Override
-    public void run(Bach bach, List<String> arguments) {
-      operator.operate(bach, arguments);
-    }
-  }
+  record BachOperatorTool(String name, Operator operator) implements Tool {}
 }

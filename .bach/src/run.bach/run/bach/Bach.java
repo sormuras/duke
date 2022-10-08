@@ -181,7 +181,26 @@ public class Bach {
     var name = call.name();
     var arguments = call.arguments();
     debug(">> %s %s".formatted(name, String.join(" ", arguments)));
-    tools().get(name).run(this, arguments);
+    var tool = tools().get(name);
+    if (tool instanceof Tool.BachOperatorTool it) {
+      runBachOperator(it.operator(), arguments);
+      return;
+    }
+    if (tool instanceof Tool.ToolProviderTool it) {
+      runToolProvider(it.provider(), arguments);
+      return;
+    }
+    throw new UnsupportedOperationException(tool.getClass().getCanonicalName());
+  }
+
+  void runBachOperator(Operator operator, List<String> arguments) {
+    operator.operate(this, arguments);
+  }
+
+  void runToolProvider(ToolProvider provider, List<String> arguments) {
+    var printer = configuration().printer();
+    Thread.currentThread().setContextClassLoader(provider.getClass().getClassLoader());
+    provider.run(printer.out(), printer.err(), arguments.toArray(String[]::new));
   }
 
   public String toString(int indent) {
