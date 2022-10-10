@@ -9,7 +9,6 @@ module project {
       ProjectLocalCreator;
   provides BachOperator with
       format,
-      ProjectLocalJarOperator,
       ProjectLocalOperator;
   provides ToolProvider with
       ProjectLocalTool;
