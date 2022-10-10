@@ -20,6 +20,7 @@ module run.bach {
   uses ToolProvider;
 
   provides BachOperator with
+      HashOperator,
       LoadFileOperator,
       LoadHeadOperator,
       LoadLibraryOperator,

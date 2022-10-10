@@ -83,8 +83,7 @@ public record LoadToolOperator(String name) implements BachOperator {
 
   void acquireProperties(Bach bach, String source, Path target) {
     bach.info("load %s".formatted(source));
-    var response = bach.browser().load(URI.create(source), target);
-    if (Files.notExists(target)) throw new RuntimeException(response.toString());
+    bach.browser().load(URI.create(source), target);
   }
 
   void explodeProperties(Bach bach, Path file) {
@@ -100,10 +99,8 @@ public record LoadToolOperator(String name) implements BachOperator {
       }
       var source = URI.create(value);
       var target = parent.resolve(key);
-      if (Files.exists(target)) continue;
       bach.info("load %s".formatted(source));
-      var response = bach.browser().load(source, target);
-      if (Files.notExists(target)) throw new RuntimeException(response.toString());
+      bach.browser().load(source, target);
     }
   }
 }

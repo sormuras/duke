@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.spi.ToolProvider;
+import run.bach.internal.LoadValidator;
 import run.bach.internal.PathSupport;
 
 public class Bach {
@@ -12,13 +13,9 @@ public class Bach {
   public static final String VERSION = "2022.10.08";
 
   public static void main(String... args) {
-    System.exit(run(args));
-  }
-
-  private static int run(String... args) {
     var out = new PrintWriter(System.out, true);
     var err = new PrintWriter(System.err, true);
-    return run(out, err, args);
+    System.exit(run(out, err, args));
   }
 
   private static int run(PrintWriter out, PrintWriter err, String... args) {
@@ -78,7 +75,7 @@ public class Bach {
   }
 
   protected Browser createBrowser() {
-    return new Browser();
+    return new Browser(new LoadValidator(this));
   }
 
   protected Libraries createLibraries() {
@@ -178,9 +175,10 @@ public class Bach {
   }
 
   public void run(ToolCall call) {
+    var id = Thread.currentThread().getId();
     var name = call.name();
     var arguments = call.arguments();
-    debug(">> %s %s".formatted(name, String.join(" ", arguments)));
+    info(">> [%03x] %s %s".formatted(id, name, String.join(" ", arguments)));
     var tool = tools().get(name);
     if (tool instanceof Tool.BachOperatorTool it) {
       runBachOperator(it.operator(), arguments);

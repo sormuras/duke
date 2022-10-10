@@ -1,7 +1,6 @@
 package run.bach.internal.tool;
 
 import java.net.URI;
-import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,9 +72,8 @@ public record LoadLibraryOperator(String name) implements BachOperator {
     for (var name : cli.names()) {
       var source = storage.properties("external-modules", name);
       var target = directory.resolve(name + ".properties");
-      var response = bach.browser().load(URI.create(source), target);
+      bach.browser().load(URI.create(source), target);
       bach.debug("  %s".formatted(target.toUri()));
-      if (Files.notExists(target)) throw new RuntimeException(response.toString());
     }
   }
 }
