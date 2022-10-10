@@ -18,13 +18,13 @@ public record LoadModuleOperator(String name) implements BachOperator {
     with_next_module:
     for (var module : arguments) {
       if (ModuleFinder.of(externals).find(module).isPresent()) {
-        bach.debug("Already");
+        bach.debug("Module %s is already present".formatted(module));
         continue; // with next module
       }
-      for (var locator : bach.libraries().list()) {
-        var location = locator.locate(module);
-        if (location == null) continue; // with next locator
-        bach.debug("Module %s located via %s".formatted(module, locator.description()));
+      for (var library : bach.libraries().list()) {
+        var location = library.locate(module);
+        if (location == null) continue; // with next library
+        bach.debug("Module %s located via %s".formatted(module, library.description()));
         var source = URI.create(location);
         var target = externals.resolve(module + ".jar");
         bach.browser().load(source, target);
