@@ -82,7 +82,7 @@ public record LoadToolOperator(String name) implements BachOperator {
   }
 
   void acquireProperties(Bach bach, String source, Path target) {
-    bach.info("load %s".formatted(source));
+    bach.debug("Load %s".formatted(source));
     bach.browser().load(URI.create(source), target);
   }
 
@@ -99,7 +99,7 @@ public record LoadToolOperator(String name) implements BachOperator {
       }
       var source = URI.create(value);
       var target = parent.resolve(key);
-      bach.info("load %s".formatted(source));
+      bach.debug("Load %s".formatted(source));
       bach.browser().load(source, target);
     }
   }

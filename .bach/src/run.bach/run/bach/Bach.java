@@ -10,7 +10,7 @@ import run.bach.internal.PathSupport;
 
 public class Bach {
 
-  public static final String VERSION = "2022.10.08";
+  public static final String VERSION = "2022.10.10";
 
   public static void main(String... args) {
     var out = new PrintWriter(System.out, true);

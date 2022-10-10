@@ -28,7 +28,10 @@ public record LoadValidator(Bach bach) implements Browser.Validator {
       calls.add(ToolCall.of("jar").with("--validate").with("--file", target));
     }
     // TODO calls.add(ToolCall.of("sig4j", "--verify", ...));
-    if (calls.isEmpty()) throw new IllegalStateException("No validation available for: " + source);
+    if (calls.isEmpty()) {
+      bach.log(System.Logger.Level.WARNING, "Do you trust? " + source);
+      return target;
+    }
     try {
       calls.stream().parallel().forEach(bach::run);
     } catch (RuntimeException exception) {
