@@ -53,7 +53,6 @@ public record InstallOperator(String name) implements BachOperator {
       return;
     }
 
-
     for (var name : cli.names()) {
       var source = register.source(index, name);
       var target = bach.paths().externalTools().resolve(name + index.extension());

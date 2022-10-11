@@ -27,11 +27,15 @@ public record SignatureOperator(String name) implements BachOperator {
   void verify(Bach bach, Path file, List<String> emails) throws Exception {
     var client = bach.browser().client();
     var hash = PathSupport.checksum(file, "SHA-256");
-    var hashResult = search(client, """
+    var hashResult =
+        search(
+            client,
+            """
             {
               "hash": "sha256:%s"
             }
-            """.formatted(hash));
+            """
+                .formatted(hash));
     if (hashResult.equals("[]")) {
       throw new RuntimeException("No entry found for https://rekor.tlog.dev/?hash=" + hash);
     }
@@ -40,13 +44,17 @@ public record SignatureOperator(String name) implements BachOperator {
       return;
     }
     for (var email : emails) {
-      var result = search(client, """
-          {
-            "email": "%s",
-            "hash": "sha256:%s",
-            "operator": "and"
-          }
-          """.formatted(email, hash));
+      var result =
+          search(
+              client,
+              """
+              {
+                "email": "%s",
+                "hash": "sha256:%s",
+                "operator": "and"
+              }
+              """
+                  .formatted(email, hash));
       if (result.equals("[]")) continue;
       bach.debug("Found trusted entry: " + result);
       return;

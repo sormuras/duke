@@ -29,7 +29,7 @@ public interface Register {
   String zip();
 
   enum Index {
-    /** A module-uri index mapping Java module names to their external modular JAR file locations. */
+    /** A module-uri index mapping Java module names to their remote modular JAR file locations. */
     LIBRARY_MODULES("external-modules", ".library.properties"),
     /** An asset-uri index mapping local file paths to their external resource locations. */
     TOOL_MATERIALS("external-tools", ".tool.properties");
