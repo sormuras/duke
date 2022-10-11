@@ -192,7 +192,13 @@ public class Bach {
   }
 
   void runBachOperator(BachOperator operator, List<String> arguments) {
-    operator.operate(this, arguments);
+    try {
+      operator.operate(this, arguments);
+    } catch (RuntimeException exception) {
+      throw exception;
+    } catch (Exception exception) {
+      throw new RuntimeException(exception);
+    }
   }
 
   void runToolProvider(ToolProvider provider, List<String> arguments) {
