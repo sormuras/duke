@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -31,6 +32,14 @@ public record ToolCall(String name, List<String> arguments) {
 
   public ToolCall(String name) {
     this(name, List.of());
+  }
+
+  public String toCommandLine(String delimiter) {
+    if (arguments.isEmpty()) return name;
+    if (arguments.size() == 1) return name + delimiter + arguments.get(0);
+    var joiner = new StringJoiner(delimiter).add(name);
+    arguments.forEach(joiner::add);
+    return joiner.toString();
   }
 
   public ToolCall with(Stream<?> objects) {

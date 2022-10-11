@@ -7,7 +7,7 @@ public final class format implements BachOperator {
   @Override
   public void operate(Bach bach, List<String> arguments) {
     var name = "google-java-format@1.15.0";
-    bach.run("load-tool", name);
+    bach.run("install", name);
     bach.run(name, format -> format.with("--replace").withFindFiles("**.java"));
   }
 }

@@ -29,7 +29,7 @@ public record LoadValidator(Bach bach) implements Browser.Validator {
     }
     // TODO calls.add(ToolCall.of("sig4j", "--verify", ...));
     if (calls.isEmpty()) {
-      bach.log(System.Logger.Level.WARNING, "Do you trust? " + source);
+      bach.log(System.Logger.Level.WARNING, "Do you trust? " + target.toUri());
       return target;
     }
     try {

@@ -21,16 +21,15 @@ module run.bach {
 
   provides BachOperator with
       HashOperator,
+      ImportOperator,
+      InstallOperator,
       LoadFileOperator,
       LoadHeadOperator,
-      LoadLibraryOperator,
       LoadModuleOperator,
       LoadModulesOperator,
       LoadTextOperator,
-      LoadToolOperator,
       ListPathsOperator,
       ListModulesOperator,
-      ListStorageOperator,
       ListToolsOperator,
       ShowLogbookOperator;
   provides ToolProvider with
