@@ -9,10 +9,12 @@ import java.util.StringJoiner;
 
 public record CLI(
     Optional<Boolean> __help,
+    Optional<Boolean> __offline,
     Optional<Boolean> __verbose,
     Optional<Boolean> __version,
     Optional<String> __printer_threshold,
     Optional<String> __project_directory,
+    List<String> __trust_signature_email,
     List<Call> calls) {
 
   public record Call(List<String> command) {}
@@ -32,11 +34,21 @@ public record CLI(
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
+        Optional.empty(),
+        List.of(),
         List.of());
   }
 
   public boolean help() {
     return __help.orElse(false);
+  }
+
+  public boolean online() {
+    return !offline();
+  }
+
+  public boolean offline() {
+    return __offline.orElse(false);
   }
 
   public boolean verbose() {
@@ -56,14 +68,20 @@ public record CLI(
     return __project_directory.map(Path::of).orElse(Path.of(""));
   }
 
+  public List<String> trustSignatureEmails() {
+    return __trust_signature_email;
+  }
+
   public String toString(int indent) {
     var joiner = new StringJoiner("\n");
     joiner.add("<options>");
     joiner.add("  --help = " + help());
+    joiner.add("  --offline = " + offline() + " -> online = " + online());
     joiner.add("  --verbose = " + verbose());
     joiner.add("  --version = " + version());
     joiner.add("  --printer-threshold = " + printerThreshold());
     joiner.add("  --project-directory = " + projectDirectory().toUri());
+    joiner.add("  --trust-signature-email = " + trustSignatureEmails());
     joiner.add("<calls>");
     if (calls.isEmpty()) joiner.add("  <empty>");
     calls.forEach(call -> joiner.add("  - " + String.join(" ", call.command())));
@@ -74,10 +92,12 @@ public record CLI(
     var arguments = new ArrayDeque<>(List.of(args));
     // extract components
     var help = __help.orElse(null);
+    var offline = __verbose.orElse(null);
     var verbose = __verbose.orElse(null);
     var version = __verbose.orElse(null);
     var printerThreshold = __printer_threshold.orElse(null);
     var projectDirectory = __project_directory.orElse(null);
+    var trustSignatureEmails = new ArrayList<>(trustSignatureEmails());
     var calls = new ArrayList<>(calls());
     // handle options by parsing flags and key-value paris
     while (!arguments.isEmpty()) {
@@ -85,6 +105,10 @@ public record CLI(
       /* parse flags */ {
         if (HELP_FLAGS.contains(argument)) {
           help = Boolean.TRUE;
+          continue;
+        }
+        if (argument.equals("--offline")) {
+          offline = Boolean.TRUE;
           continue;
         }
         if (argument.equals("--verbose")) {
@@ -97,14 +121,20 @@ public record CLI(
         }
       }
       /* parse key-value pairs */ {
-        int sep = argument.indexOf('=');
-        var key = sep == -1 ? argument : argument.substring(0, sep);
+        int separator = argument.indexOf('=');
+        var pop = separator == -1;
+        var key = pop ? argument : argument.substring(0, separator);
+        var val = separator + 1;
         if (key.equals("--printer-threshold")) {
-          printerThreshold = sep == -1 ? arguments.removeFirst() : argument.substring(sep + 1);
+          printerThreshold = pop ? arguments.pop() : argument.substring(val);
           continue;
         }
         if (key.equals("--project-directory")) {
-          projectDirectory = sep == -1 ? arguments.removeFirst() : argument.substring(sep + 1);
+          projectDirectory = pop ? arguments.pop() : argument.substring(val);
+          continue;
+        }
+        if (key.equals("--trust-signature-email")) {
+          trustSignatureEmails.add(pop ? arguments.pop() : argument.substring(val));
           continue;
         }
       }
@@ -121,18 +151,20 @@ public record CLI(
           calls.add(new Call(List.copyOf(elements)));
           elements.clear();
           if (empty) break;
-          arguments.removeFirst(); // consume delimiter
+          arguments.pop(); // consume delimiter
         }
-        elements.add(arguments.removeFirst()); // consume element
+        elements.add(arguments.pop()); // consume element
       }
     }
     // compose configuration
     return new CLI(
         Optional.ofNullable(help),
+        Optional.ofNullable(offline),
         Optional.ofNullable(verbose),
         Optional.ofNullable(version),
         Optional.ofNullable(printerThreshold),
         Optional.ofNullable(projectDirectory),
+        List.copyOf(trustSignatureEmails),
         List.copyOf(calls));
   }
 }
