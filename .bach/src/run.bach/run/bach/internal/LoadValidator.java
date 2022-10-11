@@ -24,10 +24,12 @@ public record LoadValidator(Bach bach) implements Browser.Validator {
               .with("--expected", expected)
               .with(target));
     }
+    if (calls.isEmpty() && bach.configuration().cli().online()) {
+      calls.add(ToolCall.of("signature").with("--verify").with("--file", target));
+    }
     if (PathSupport.isJarFile(target)) {
       calls.add(ToolCall.of("jar").with("--validate").with("--file", target));
     }
-    // TODO calls.add(ToolCall.of("sig4j", "--verify", ...));
     if (calls.isEmpty()) {
       bach.log(System.Logger.Level.WARNING, "Do you trust? " + target.toUri());
       return target;
