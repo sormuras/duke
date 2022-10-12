@@ -27,7 +27,7 @@ public record ImportOperator(String name) implements BachOperator {
     var register = cli.from();
     var names = cli.names();
 
-    bach.info("Import from register: %s".formatted(register.home()));
+    bach.debug("Import from register: %s".formatted(register.home()));
     if (names.isEmpty() || names.contains("?")) {
       var inspector = RegisterInspector.of(bach.browser().client(), register);
       var libraries = inspector.map().get(index);
