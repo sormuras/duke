@@ -10,7 +10,7 @@ import run.bach.internal.PathSupport;
 
 public class Bach {
 
-  public static final String VERSION = "2022.10.10";
+  public static final String VERSION = "2022.10.12";
 
   public static void main(String... args) {
     var out = new PrintWriter(System.out, true);
@@ -40,10 +40,13 @@ public class Bach {
         bach.info(bach.tools().toString(2));
         return 0;
       }
-      for (var call : cli.calls()) bach.run(ToolCall.of(call.command()));
+      var calls = new ArrayList<>(cli.calls());
+      var first = calls.remove(0);
+      bach.run(ToolCall.of(first.command()), new Runner(System.Logger.Level.DEBUG));
+      for (var next : calls) bach.run(ToolCall.of(next.command()));
       return 0;
     } catch (Exception exception) {
-      exception.printStackTrace(err);
+      err.println(exception.getMessage());
       return 1;
     }
   }
@@ -60,6 +63,7 @@ public class Bach {
   private final Paths paths;
   private final Browser browser;
   private final Libraries libraries;
+  private final Runner runner;
   private final Tools tools;
 
   public Bach(Configuration configuration) {
@@ -68,6 +72,7 @@ public class Bach {
     this.paths = createPaths();
     this.browser = createBrowser();
     this.libraries = createLibraries();
+    this.runner = createRunner();
     this.tools = createTools();
 
     debug("Created instance of " + getClass());
@@ -93,6 +98,10 @@ public class Bach {
 
   protected Paths createPaths() {
     return Paths.ofRoot(configuration.cli().projectDirectory());
+  }
+
+  protected Runner createRunner() {
+    return new Runner(System.Logger.Level.INFO);
   }
 
   protected Tools createTools() {
@@ -144,6 +153,10 @@ public class Bach {
     return logbook;
   }
 
+  public final Runner defaultRunOptions() {
+    return runner;
+  }
+
   public final Tools tools() {
     return tools;
   }
@@ -175,17 +188,21 @@ public class Bach {
   }
 
   public void run(ToolCall call) {
-    var id = Thread.currentThread().getId();
-    var name = call.name();
-    var arguments = call.arguments();
-    info(">> [%03x] %s %s".formatted(id, name, String.join(" ", arguments)));
-    var tool = tools().get(name);
+    run(call, defaultRunOptions());
+  }
+
+  public void run(ToolCall call, Runner runner) {
+    log(runner.logLevel(), runner.logMessage(call));
+    var tool = runner.tool().orElseGet(() -> tools().get(call.name()));
+    debug("Run instance of " + tool.getClass());
     if (tool instanceof Tool.BachOperatorTool it) {
-      runBachOperator(it.operator(), arguments);
+      runBachOperator(it.operator(), call.arguments());
       return;
     }
     if (tool instanceof Tool.ToolProviderTool it) {
-      runToolProvider(it.provider(), arguments);
+      var provider = it.provider();
+      Thread.currentThread().setContextClassLoader(provider.getClass().getClassLoader());
+      runToolProvider(provider, call.arguments());
       return;
     }
     throw new UnsupportedOperationException(tool.getClass().getCanonicalName());
@@ -203,18 +220,26 @@ public class Bach {
 
   void runToolProvider(ToolProvider provider, List<String> arguments) {
     var printer = configuration().printer();
-    Thread.currentThread().setContextClassLoader(provider.getClass().getClassLoader());
-    provider.run(printer.out(), printer.err(), arguments.toArray(String[]::new));
+    var args = arguments.toArray(String[]::new);
+    var code = provider.run(printer.out(), printer.err(), args);
+    if (code == 0) return;
+    var name = provider.name();
+    throw new RuntimeException("Tool %s returned non-zero exit code: %d".formatted(name, code));
   }
 
   public String toString(int indent) {
     return """
             Paths
             %s
+            Run
+            %s
             Tool Finders
             %s
             """
-        .formatted(paths.toString(indent + 2), tools.toFindersString(indent + 2))
+        .formatted(
+            paths.toString(indent + 2),
+            runner.toString().indent(indent + 2).stripTrailing(),
+            tools.toFindersString(indent + 2))
         .indent(indent)
         .stripTrailing();
   }
