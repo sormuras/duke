@@ -12,7 +12,7 @@ public record Tools(List<ToolFinder> finders) {
       if (found.isEmpty()) continue;
       return found.get();
     }
-    throw new UnsupportedOperationException(string);
+    throw new RuntimeException("No such tool: " + string);
   }
 
   public String toString(int indent) {
