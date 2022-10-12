@@ -1,8 +1,10 @@
 package run.bach;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -96,8 +98,13 @@ public record CLI(
     return joiner.toString().indent(indent).stripTrailing();
   }
 
-  public CLI withParsingCommandLineArguments(String... args) {
-    var arguments = new ArrayDeque<>(List.of(args));
+  public CLI withParsingCommandLineArguments(Path file) {
+    if (Files.notExists(file)) return this;
+    return withParsingCommandLineArguments(expandArgumentsFile(file));
+  }
+
+  public CLI withParsingCommandLineArguments(List<String> args) {
+    var arguments = new ArrayDeque<>(args);
     // extract components
     var help = __help.orElse(null);
     var offline = __verbose.orElse(null);
@@ -111,6 +118,15 @@ public record CLI(
     // handle options by parsing flags and key-value paris
     while (!arguments.isEmpty()) {
       var argument = arguments.removeFirst();
+      /* expand @file arguments */ {
+        if (argument.startsWith("@") && !(argument.startsWith("@@"))) {
+          var file = Path.of(argument.substring(1));
+          var list = new ArrayList<>(expandArgumentsFile(file));
+          Collections.reverse(list);
+          list.forEach(arguments::addFirst);
+          continue;
+        }
+      }
       /* parse flags */ {
         if (HELP_FLAGS.contains(argument)) {
           help = Boolean.TRUE;
@@ -180,5 +196,25 @@ public record CLI(
         Optional.ofNullable(projectDirectory),
         List.copyOf(trustSignatureEmails),
         List.copyOf(calls));
+  }
+
+  private static List<String> expandArgumentsFile(Path file) {
+    if (Files.notExists(file)) throw new RuntimeException("Arguments file not found: " + file);
+    var arguments = new ArrayList<String>();
+    try {
+      for (var line : Files.readAllLines(file)) {
+        line = line.strip();
+        if (line.startsWith("#")) continue;
+        if (line.startsWith("@") && !line.startsWith("@@")) {
+          throw new IllegalArgumentException("Expand arguments file not allowed: " + line);
+        }
+        arguments.add(line);
+      }
+    } catch (RuntimeException exception) {
+      throw exception;
+    } catch (Exception exception) {
+      throw new RuntimeException("Read all lines from file failed: " + file, exception);
+    }
+    return List.copyOf(arguments);
   }
 }

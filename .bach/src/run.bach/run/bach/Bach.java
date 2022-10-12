@@ -20,7 +20,12 @@ public class Bach {
 
   private static int run(PrintWriter out, PrintWriter err, String... args) {
     try {
-      var cli = new CLI().withParsingCommandLineArguments(args);
+      var preliminaryCLI = new CLI().withParsingCommandLineArguments(List.of(args));
+      var preliminaryPaths = Paths.ofRoot(preliminaryCLI.projectDirectory());
+      var cli =
+          new CLI()
+              .withParsingCommandLineArguments(preliminaryPaths.root(".bach/bach.args"))
+              .withParsingCommandLineArguments(List.of(args));
       var printer = new Printer(out, err, cli.printerThreshold(), cli.printerMargin());
       var configuration = new Configuration(cli, printer);
       var verbose = cli.verbose();
