@@ -204,6 +204,7 @@ public record CLI(
     try {
       for (var line : Files.readAllLines(file)) {
         line = line.strip();
+        if (line.isEmpty()) continue;
         if (line.startsWith("#")) continue;
         if (line.startsWith("@") && !line.startsWith("@@")) {
           throw new IllegalArgumentException("Expand arguments file not allowed: " + line);
