@@ -13,6 +13,7 @@ public record CLI(
     Optional<Boolean> __verbose,
     Optional<Boolean> __version,
     Optional<String> __printer_threshold,
+    Optional<String> __printer_margin,
     Optional<String> __project_directory,
     List<String> __trust_signature_email,
     List<Call> calls) {
@@ -23,12 +24,15 @@ public record CLI(
 
   public static final List<String> HELP_FLAGS = List.of("?", "/?", "-?", "-h", "--help");
 
+  public static final int DEFAULT_PRINTER_MARGIN = 160;
+
   public static boolean isFirstArgumentHelpOptionName(List<String> arguments) {
     return !arguments.isEmpty() && HELP_FLAGS.contains(arguments.get(0));
   }
 
   public CLI() {
     this(
+        Optional.empty(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
@@ -64,6 +68,10 @@ public record CLI(
     return __printer_threshold.map(System.Logger.Level::valueOf).orElse(defaultThreshold);
   }
 
+  public int printerMargin() {
+    return __printer_margin.map(Integer::parseInt).orElse(DEFAULT_PRINTER_MARGIN);
+  }
+
   public Path projectDirectory() {
     return __project_directory.map(Path::of).orElse(Path.of(""));
   }
@@ -96,6 +104,7 @@ public record CLI(
     var verbose = __verbose.orElse(null);
     var version = __verbose.orElse(null);
     var printerThreshold = __printer_threshold.orElse(null);
+    var printerMargin = __printer_margin.orElse(null);
     var projectDirectory = __project_directory.orElse(null);
     var trustSignatureEmails = new ArrayList<>(trustSignatureEmails());
     var calls = new ArrayList<>(calls());
@@ -127,6 +136,10 @@ public record CLI(
         var val = separator + 1;
         if (key.equals("--printer-threshold")) {
           printerThreshold = pop ? arguments.pop() : argument.substring(val);
+          continue;
+        }
+        if (key.equals("--printer-margin")) {
+          printerMargin = pop ? arguments.pop() : argument.substring(val);
           continue;
         }
         if (key.equals("--project-directory")) {
@@ -163,6 +176,7 @@ public record CLI(
         Optional.ofNullable(verbose),
         Optional.ofNullable(version),
         Optional.ofNullable(printerThreshold),
+        Optional.ofNullable(printerMargin),
         Optional.ofNullable(projectDirectory),
         List.copyOf(trustSignatureEmails),
         List.copyOf(calls));
