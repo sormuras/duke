@@ -34,6 +34,7 @@ module run.bach {
       ShowLogbookOperator,
       SignatureOperator;
   provides ToolProvider with
+      BachToolProvider,
       ListFilesTool,
       TreeCreateTool,
       TreeDeleteTool,

@@ -18,7 +18,7 @@ public class Bach implements ToolRunner {
     System.exit(run(out, err, args));
   }
 
-  private static int run(PrintWriter out, PrintWriter err, String... args) {
+  static int run(PrintWriter out, PrintWriter err, String... args) {
     try {
       var preliminaryCLI = new CLI().withParsingCommandLineArguments(List.of(args));
       var preliminaryPaths = Paths.ofRoot(preliminaryCLI.projectDirectory());
