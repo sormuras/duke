@@ -8,9 +8,9 @@ import java.util.spi.ToolProvider;
 import run.bach.internal.LoadValidator;
 import run.bach.internal.PathSupport;
 
-public class Bach {
+public class Bach implements ToolRunner {
 
-  public static final String VERSION = "2022.10.12";
+  public static final String VERSION = "2022.10.13";
 
   public static void main(String... args) {
     var out = new PrintWriter(System.out, true);
@@ -47,7 +47,7 @@ public class Bach {
       }
       var calls = new ArrayList<>(cli.calls());
       var first = calls.remove(0);
-      bach.run(ToolCall.of(first.command()), new Runner(System.Logger.Level.DEBUG));
+      bach.run(ToolCall.of(first.command()), System.Logger.Level.DEBUG);
       for (var next : calls) bach.run(ToolCall.of(next.command()));
       return 0;
     } catch (Exception exception) {
@@ -68,7 +68,6 @@ public class Bach {
   private final Paths paths;
   private final Browser browser;
   private final Libraries libraries;
-  private final Runner runner;
   private final Tools tools;
 
   public Bach(Configuration configuration) {
@@ -77,7 +76,6 @@ public class Bach {
     this.paths = createPaths();
     this.browser = createBrowser();
     this.libraries = createLibraries();
-    this.runner = createRunner();
     this.tools = createTools();
 
     debug("Created instance of " + getClass());
@@ -103,10 +101,6 @@ public class Bach {
 
   protected Paths createPaths() {
     return Paths.ofRoot(configuration.cli().projectDirectory());
-  }
-
-  protected Runner createRunner() {
-    return new Runner(System.Logger.Level.INFO);
   }
 
   protected Tools createTools() {
@@ -158,10 +152,6 @@ public class Bach {
     return logbook;
   }
 
-  public final Runner defaultRunOptions() {
-    return runner;
-  }
-
   public final Tools tools() {
     return tools;
   }
@@ -180,37 +170,30 @@ public class Bach {
     configuration().printer().println(level, text);
   }
 
-  public void run(String tool, String... args) {
-    run(new ToolCall(tool, List.of(args)));
-  }
-
-  public void run(String tool, List<String> arguments) {
-    run(new ToolCall(tool, List.copyOf(arguments)));
-  }
-
-  public void run(String tool, ToolCall.Composer composer) {
-    run(composer.apply(new ToolCall(tool)));
-  }
-
+  @Override
   public void run(ToolCall call) {
-    run(call, defaultRunOptions());
+    run(call, System.Logger.Level.INFO);
   }
 
-  public void run(ToolCall call, Runner runner) {
-    log(runner.logLevel(), runner.logMessage(call));
-    var tool = runner.tool().orElseGet(() -> tools().get(call.name()));
+  void run(ToolCall call, System.Logger.Level level) {
+    log(level, "| %s".formatted(call.toCommandLine(" ")));
+    var tool = tools().get(call.name());
+    run(tool, call.arguments());
+  }
+
+  void run(Tool tool, List<String> arguments) {
     debug("Run instance of " + tool.getClass());
     if (tool instanceof Tool.BachOperatorTool it) {
-      runBachOperator(it.operator(), call.arguments());
+      runBachOperator(it.operator(), arguments);
       return;
     }
     if (tool instanceof Tool.ToolProviderTool it) {
       var provider = it.provider();
       Thread.currentThread().setContextClassLoader(provider.getClass().getClassLoader());
-      runToolProvider(provider, call.arguments());
+      runToolProvider(provider, arguments);
       return;
     }
-    throw new UnsupportedOperationException(tool.getClass().getCanonicalName());
+    throw new Error(tool.getClass().getCanonicalName());
   }
 
   void runBachOperator(BachOperator operator, List<String> arguments) {
@@ -236,15 +219,10 @@ public class Bach {
     return """
             Paths
             %s
-            Run
-            %s
             Tool Finders
             %s
             """
-        .formatted(
-            paths.toString(indent + 2),
-            runner.toString().indent(indent + 2).stripTrailing(),
-            tools.toFindersString(indent + 2))
+        .formatted(paths.toString(indent + 2), tools.toFindersString(indent + 2))
         .indent(indent)
         .stripTrailing();
   }
