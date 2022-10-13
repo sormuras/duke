@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 
-public record Tools(List<ToolFinder> finders) {
+public record Tools(ToolFinders finders) {
   public Tool get(String string) {
-    for (var finder : finders) {
+    for (var finder : finders.list()) {
       var found = finder.findFirst(string);
       if (found.isEmpty()) continue;
       return found.get();
@@ -20,7 +20,7 @@ public record Tools(List<ToolFinder> finders) {
     var width = 3;
     var tools = new ArrayList<Tool>();
     var nicks = new TreeMap<String, List<Tool>>();
-    for (var finder : finders) {
+    for (var finder : finders.list()) {
       for (var tool : finder.findAll()) {
         tools.add(tool);
         nicks.computeIfAbsent(tool.nick(), __ -> new ArrayList<>()).add(tool);
@@ -35,18 +35,6 @@ public record Tools(List<ToolFinder> finders) {
     }
     var size = tools.size();
     joiner.add("    %d tool%s".formatted(size, size == 1 ? "" : "s"));
-    return joiner.toString().indent(indent).stripTrailing();
-  }
-
-  public String toFindersString(int indent) {
-    var joiner = new StringJoiner("\n");
-    for (var finder : finders) {
-      var description = finder.description();
-      var tools = finder.findAll().size();
-      joiner.add("%s [%d]".formatted(description, tools));
-    }
-    var size = finders.size();
-    joiner.add("    %d finder%s".formatted(size, size == 1 ? "" : "s"));
     return joiner.toString().indent(indent).stripTrailing();
   }
 }

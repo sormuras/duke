@@ -129,7 +129,7 @@ public class Bach implements ToolRunner {
             "java",
             "jfr",
             "jdeprscan"));
-    return new Tools(List.copyOf(finders));
+    return new Tools(new ToolFinders(finders));
   }
 
   public final Configuration configuration() {
@@ -222,7 +222,7 @@ public class Bach implements ToolRunner {
             Tool Finders
             %s
             """
-        .formatted(paths.toString(indent + 2), tools.toFindersString(indent + 2))
+        .formatted(paths.toString(indent + 2), tools.finders().toString(indent + 2))
         .indent(indent)
         .stripTrailing();
   }
