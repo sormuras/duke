@@ -8,9 +8,7 @@ import java.util.StringJoiner;
 import run.bach.Bach;
 import run.bach.ToolCall;
 import run.bach.ToolOperator;
-import run.bach.internal.Register;
-import run.bach.internal.RegisterIndex;
-import run.bach.internal.RegisterInspector;
+import run.bach.internal.Repository;
 
 public record ImportOperator(String name) implements ToolOperator {
   public ImportOperator() {
@@ -21,19 +19,19 @@ public record ImportOperator(String name) implements ToolOperator {
   public void operate(Bach bach, List<String> arguments) {
     var cli = new CLI().withParsingCommandLineArguments(arguments);
     if (cli.help()) {
-      bach.info("Usage: bach import [--help] [--from <register>] <locators...>");
+      bach.info("Usage: bach import [--help] [--from <repository>] <locators...>");
       return;
     }
-    var index = RegisterIndex.EXTERNAL_MODULES_LOCATOR;
-    var register = cli.from();
+    var info = Repository.Info.EXTERNAL_MODULES_LOCATOR;
+    var from = cli.from();
     var names = cli.names();
 
-    bach.debug("Import external modules locator from register: %s".formatted(register.home()));
+    bach.debug("Import external modules locator from repository: %s".formatted(from.home()));
     if (names.isEmpty() || names.contains("?")) {
-      var inspector = RegisterInspector.of(bach.browser().client(), register);
-      var locators = inspector.map().get(index);
+      var walker = Repository.walk(bach.browser().client(), from);
+      var locators = walker.map().get(info);
       if (locators == null || locators.isEmpty()) {
-        bach.info("No external modules locator index file found in " + register);
+        bach.info("No external modules locator index file found in " + from);
         return;
       }
       var joiner = new StringJoiner("\n");
@@ -41,7 +39,7 @@ public record ImportOperator(String name) implements ToolOperator {
         var command = ToolCall.of("bach");
         command = command.with(name()); // "import"
         if (cli.__from().isPresent()) command = command.with("--from", cli.__from().get());
-        command = command.with(index.name(locator));
+        command = command.with(info.name(locator));
         joiner.add(command.toCommandLine(" "));
       }
       var size = locators.size();
@@ -51,8 +49,8 @@ public record ImportOperator(String name) implements ToolOperator {
     }
 
     for (var name : names) {
-      var source = register.source(index, name);
-      var target = bach.paths().externalModules(name + index.extension());
+      var source = from.source(info, name);
+      var target = bach.paths().externalModules(name + info.extension());
       bach.run("load-file", source, target.toString());
     }
   }
@@ -66,8 +64,8 @@ public record ImportOperator(String name) implements ToolOperator {
       return __help.orElse(false);
     }
 
-    Register from() {
-      return __from.map(Register::of).orElse(Register.DEFAULT);
+    Repository from() {
+      return __from.map(Repository::of).orElse(Repository.DEFAULT);
     }
 
     CLI withParsingCommandLineArguments(List<String> args) {

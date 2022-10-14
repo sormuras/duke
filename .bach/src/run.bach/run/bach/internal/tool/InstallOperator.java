@@ -11,9 +11,7 @@ import run.bach.Bach;
 import run.bach.ToolCall;
 import run.bach.ToolOperator;
 import run.bach.internal.PathSupport;
-import run.bach.internal.Register;
-import run.bach.internal.RegisterIndex;
-import run.bach.internal.RegisterInspector;
+import run.bach.internal.Repository;
 
 public record InstallOperator(String name) implements ToolOperator {
 
@@ -25,19 +23,19 @@ public record InstallOperator(String name) implements ToolOperator {
   public void operate(Bach bach, List<String> arguments) {
     var cli = new CLI().withParsingCommandLineArguments(arguments);
     if (cli.help()) {
-      bach.info("Usage: bach import [--help] [--from <register>] <tools...>");
+      bach.info("Usage: bach import [--help] [--from <repository>] <tools...>");
       return;
     }
-    var index = RegisterIndex.EXTERNAL_TOOL_DIRECTORY;
-    var register = cli.from();
+    var index = Repository.Info.EXTERNAL_TOOL_DIRECTORY;
+    var from = cli.from();
     var names = cli.names();
 
-    bach.debug("Install tool directory index file from register: %s".formatted(register.home()));
+    bach.debug("Install tool directory index file from repository: %s".formatted(from.home()));
     if (names.isEmpty() || names.contains("?")) {
-      var inspector = RegisterInspector.of(bach.browser().client(), register);
-      var tools = inspector.map().get(index);
+      var walker = Repository.walk(bach.browser().client(), from);
+      var tools = walker.map().get(index);
       if (tools == null || tools.isEmpty()) {
-        bach.info("No tool directory index files found in " + register);
+        bach.info("No tool directory index files found in " + from);
         return;
       }
       var joiner = new StringJoiner("\n");
@@ -55,7 +53,7 @@ public record InstallOperator(String name) implements ToolOperator {
     }
 
     for (var name : cli.names()) {
-      var source = register.source(index, name);
+      var source = from.source(index, name);
       var target = bach.paths().externalTools().resolve(name + index.extension());
       acquireToolDirectory(bach, source, target);
       explodeToolDirectory(bach, target);
@@ -69,7 +67,7 @@ public record InstallOperator(String name) implements ToolOperator {
   void explodeToolDirectory(Bach bach, Path file) {
     var properties = PathSupport.properties(file);
     var name = file.getFileName().toString();
-    var extension = RegisterIndex.EXTERNAL_TOOL_DIRECTORY.extension();
+    var extension = Repository.Info.EXTERNAL_TOOL_DIRECTORY.extension();
     var parent = file.resolveSibling(name.substring(0, name.length() - extension.length()));
     for (var key : properties.stringPropertyNames()) {
       if (key.startsWith("@")) continue;
@@ -93,8 +91,8 @@ public record InstallOperator(String name) implements ToolOperator {
       return __help.orElse(false);
     }
 
-    Register from() {
-      return __from.map(Register::of).orElse(Register.DEFAULT);
+    Repository from() {
+      return __from.map(Repository::of).orElse(Repository.DEFAULT);
     }
 
     CLI withParsingCommandLineArguments(List<String> args) {

@@ -23,6 +23,7 @@ module run.bach {
   provides ToolOperator with
       HashOperator,
       ImportOperator,
+      InfoOperator,
       InstallOperator,
       LoadFileOperator,
       LoadHeadOperator,
