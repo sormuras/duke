@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
 import run.bach.Bach;
-import run.bach.BachOperator;
 import run.bach.ToolCall;
+import run.bach.ToolOperator;
 import run.bach.internal.PathSupport;
 import run.bach.internal.Register;
+import run.bach.internal.RegisterIndex;
 import run.bach.internal.RegisterInspector;
 
-public record InstallOperator(String name) implements BachOperator {
+public record InstallOperator(String name) implements ToolOperator {
 
   public InstallOperator() {
     this("install");
@@ -27,27 +28,27 @@ public record InstallOperator(String name) implements BachOperator {
       bach.info("Usage: bach import [--help] [--from <register>] <tools...>");
       return;
     }
-    var index = Register.Index.TOOL_MATERIALS;
+    var index = RegisterIndex.EXTERNAL_TOOL_DIRECTORY;
     var register = cli.from();
     var names = cli.names();
 
-    bach.debug("Install from register: %s".formatted(register.home()));
+    bach.debug("Install tool directory index file from register: %s".formatted(register.home()));
     if (names.isEmpty() || names.contains("?")) {
       var inspector = RegisterInspector.of(bach.browser().client(), register);
-      var libraries = inspector.map().get(index);
-      if (libraries == null || libraries.isEmpty()) {
-        bach.info("No tool index files found");
+      var tools = inspector.map().get(index);
+      if (tools == null || tools.isEmpty()) {
+        bach.info("No tool directory index files found in " + register);
         return;
       }
       var joiner = new StringJoiner("\n");
-      for (var library : libraries) {
+      for (var tool : tools) {
         var command = ToolCall.of("bach");
         command = command.with(name()); // "install"
         if (cli.__from().isPresent()) command = command.with("--from", cli.__from().get());
-        command = command.with(index.name(library));
+        command = command.with(index.name(tool));
         joiner.add(command.toCommandLine(" "));
       }
-      var size = libraries.size();
+      var size = tools.size();
       joiner.add("    %d tool%s".formatted(size, size == 1 ? "" : "s"));
       bach.info(joiner.toString());
       return;
@@ -56,19 +57,19 @@ public record InstallOperator(String name) implements BachOperator {
     for (var name : cli.names()) {
       var source = register.source(index, name);
       var target = bach.paths().externalTools().resolve(name + index.extension());
-      acquireProperties(bach, source, target);
-      explodeProperties(bach, target);
+      acquireToolDirectory(bach, source, target);
+      explodeToolDirectory(bach, target);
     }
   }
 
-  void acquireProperties(Bach bach, String source, Path target) {
+  void acquireToolDirectory(Bach bach, String source, Path target) {
     bach.run("load-file", source, target.toString());
   }
 
-  void explodeProperties(Bach bach, Path file) {
+  void explodeToolDirectory(Bach bach, Path file) {
     var properties = PathSupport.properties(file);
     var name = file.getFileName().toString();
-    var extension = Register.Index.TOOL_MATERIALS.extension();
+    var extension = RegisterIndex.EXTERNAL_TOOL_DIRECTORY.extension();
     var parent = file.resolveSibling(name.substring(0, name.length() - extension.length()));
     for (var key : properties.stringPropertyNames()) {
       if (key.startsWith("@")) continue;

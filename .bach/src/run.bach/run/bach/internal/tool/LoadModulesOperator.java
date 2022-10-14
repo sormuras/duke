@@ -5,17 +5,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import run.bach.Bach;
-import run.bach.BachOperator;
+import run.bach.ToolOperator;
 import run.bach.internal.ModulesSupport;
 
-public record LoadModulesOperator(String name) implements BachOperator {
+public record LoadModulesOperator(String name) implements ToolOperator {
   public LoadModulesOperator() {
     this("load-modules");
   }
 
   @Override
   public void operate(Bach bach, List<String> arguments) {
-    if (help(bach, arguments, "<more-missing-module-names...>")) return;
+    // if (help(bach, arguments, "<more-missing-module-names...>")) return;
     var externals = bach.paths().externalModules();
     var loaded = new TreeSet<String>();
     var difference = new TreeSet<String>();

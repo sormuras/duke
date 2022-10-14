@@ -13,8 +13,8 @@ class ProjectLocalBach extends Bach {
   }
 
   @Override
-  protected Libraries createLibraries() {
-    return super.createLibraries();
+  protected Locators createLocators() {
+    return super.createLocators();
   }
 
   @Override

@@ -13,9 +13,8 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.zip.ZipInputStream;
-import run.bach.internal.Register.Index;
 
-public record RegisterInspector(Map<Index, List<String>> map) {
+public record RegisterInspector(Map<RegisterIndex, List<String>> map) {
   public static RegisterInspector of(Path path) {
     return new RegisterInspector(mapDirectoryTree(path));
   }
@@ -33,7 +32,7 @@ public record RegisterInspector(Map<Index, List<String>> map) {
 
   public String toString(int indent) {
     var joiner = new StringJoiner("\n");
-    for (var index : Index.values()) {
+    for (var index : RegisterIndex.values()) {
       var list = map.get(index);
       if (list == null) {
         joiner.add(index + " not present");
@@ -51,15 +50,15 @@ public record RegisterInspector(Map<Index, List<String>> map) {
     return joiner.toString().indent(indent).stripTrailing();
   }
 
-  private static Map<Index, List<String>> mapDirectoryTree(Path start) {
+  private static Map<RegisterIndex, List<String>> mapDirectoryTree(Path start) {
     if (!Files.isDirectory(start)) return Map.of();
-    var map = new TreeMap<Index, List<String>>();
+    var map = new TreeMap<RegisterIndex, List<String>>();
     var matcher = start.getFileSystem().getPathMatcher("glob:**.properties");
     try (var stream = Files.find(start, 99, (path, attributes) -> matcher.matches(path))) {
       with_next_path:
       for (var path : stream.toList()) {
         var candidate = path.toUri().toString();
-        for (var index : Index.values()) {
+        for (var index : RegisterIndex.values()) {
           if (candidate.endsWith(index.extension())) {
             map.computeIfAbsent(index, key -> new ArrayList<>()).add(candidate);
             continue with_next_path;
@@ -72,8 +71,8 @@ public record RegisterInspector(Map<Index, List<String>> map) {
     return map;
   }
 
-  private static Map<Index, List<String>> mapZipInputStream(InputStream stream) {
-    var map = new TreeMap<Index, List<String>>();
+  private static Map<RegisterIndex, List<String>> mapZipInputStream(InputStream stream) {
+    var map = new TreeMap<RegisterIndex, List<String>>();
     try (var zip = new ZipInputStream(stream)) {
       with_next_entry:
       while (true) {
@@ -81,7 +80,7 @@ public record RegisterInspector(Map<Index, List<String>> map) {
         if (entry == null) break;
         var name = entry.getName();
         if (!name.endsWith(".properties")) continue;
-        for (var index : Index.values()) {
+        for (var index : RegisterIndex.values()) {
           if (name.endsWith(index.extension())) {
             map.computeIfAbsent(index, key -> new ArrayList<>()).add(name);
             continue with_next_entry;

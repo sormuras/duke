@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import run.bach.Bach;
-import run.bach.BachOperator;
+import run.bach.ToolOperator;
 import run.bach.internal.PathSupport;
 
-public record HashOperator(String name) implements BachOperator {
+public record HashOperator(String name) implements ToolOperator {
   public HashOperator() {
     this("hash");
   }

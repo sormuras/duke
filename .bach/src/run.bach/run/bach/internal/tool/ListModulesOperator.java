@@ -4,10 +4,10 @@ import java.lang.module.ModuleFinder;
 import java.util.List;
 import java.util.Set;
 import run.bach.Bach;
-import run.bach.BachOperator;
+import run.bach.ToolOperator;
 import run.bach.internal.ModulesSupport;
 
-public record ListModulesOperator(String name) implements BachOperator {
+public record ListModulesOperator(String name) implements ToolOperator {
 
   public ListModulesOperator() {
     this("list-modules");

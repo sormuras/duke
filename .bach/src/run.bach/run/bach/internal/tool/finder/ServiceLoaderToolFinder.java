@@ -14,7 +14,7 @@ public record ServiceLoaderToolFinder(ModuleLayer layer, ServiceLoader<ToolProvi
       return loader.stream()
           .filter(service -> service.type().getModule().getLayer() == layer)
           .map(ServiceLoader.Provider::get)
-          .map(Tool::of)
+          .map(Tool::ofToolProvider)
           .toList();
     }
   }

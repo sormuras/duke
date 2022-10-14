@@ -6,12 +6,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
 import run.bach.Bach;
-import run.bach.BachOperator;
 import run.bach.ToolCall;
+import run.bach.ToolOperator;
 import run.bach.internal.Register;
+import run.bach.internal.RegisterIndex;
 import run.bach.internal.RegisterInspector;
 
-public record ImportOperator(String name) implements BachOperator {
+public record ImportOperator(String name) implements ToolOperator {
   public ImportOperator() {
     this("import");
   }
@@ -20,31 +21,31 @@ public record ImportOperator(String name) implements BachOperator {
   public void operate(Bach bach, List<String> arguments) {
     var cli = new CLI().withParsingCommandLineArguments(arguments);
     if (cli.help()) {
-      bach.info("Usage: bach import [--help] [--from <register>] <libraries...>");
+      bach.info("Usage: bach import [--help] [--from <register>] <locators...>");
       return;
     }
-    var index = Register.Index.LIBRARY_MODULES;
+    var index = RegisterIndex.EXTERNAL_MODULES_LOCATOR;
     var register = cli.from();
     var names = cli.names();
 
-    bach.debug("Import from register: %s".formatted(register.home()));
+    bach.debug("Import external modules locator from register: %s".formatted(register.home()));
     if (names.isEmpty() || names.contains("?")) {
       var inspector = RegisterInspector.of(bach.browser().client(), register);
-      var libraries = inspector.map().get(index);
-      if (libraries == null || libraries.isEmpty()) {
-        bach.info("No modular library index file found");
+      var locators = inspector.map().get(index);
+      if (locators == null || locators.isEmpty()) {
+        bach.info("No external modules locator index file found in " + register);
         return;
       }
       var joiner = new StringJoiner("\n");
-      for (var library : libraries) {
+      for (var locator : locators) {
         var command = ToolCall.of("bach");
         command = command.with(name()); // "import"
         if (cli.__from().isPresent()) command = command.with("--from", cli.__from().get());
-        command = command.with(index.name(library));
+        command = command.with(index.name(locator));
         joiner.add(command.toCommandLine(" "));
       }
-      var size = libraries.size();
-      joiner.add("    %d librar%s".formatted(size, size == 1 ? "y" : "ies"));
+      var size = locators.size();
+      joiner.add("    %d locator%s".formatted(size, size == 1 ? "" : "s"));
       bach.info(joiner.toString());
       return;
     }
@@ -90,7 +91,7 @@ public record ImportOperator(String name) implements BachOperator {
             continue;
           }
         }
-        // restore argument because first unhandled option marks the beginning of the library names
+        // restore argument because first unhandled option marks the beginning of the locator names
         arguments.addFirst(argument);
         break;
       }

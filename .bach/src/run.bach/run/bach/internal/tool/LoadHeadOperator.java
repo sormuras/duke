@@ -3,16 +3,16 @@ package run.bach.internal.tool;
 import java.net.URI;
 import java.util.List;
 import run.bach.Bach;
-import run.bach.BachOperator;
+import run.bach.ToolOperator;
 
-public record LoadHeadOperator(String name) implements BachOperator {
+public record LoadHeadOperator(String name) implements ToolOperator {
   public LoadHeadOperator() {
     this("load-head");
   }
 
   @Override
   public void operate(Bach bach, List<String> arguments) {
-    if (help(bach, arguments, "<uris...>")) return;
+    // if (help(bach, arguments, "<uris...>")) return;
     for (var argument : arguments) {
       var uri = URI.create(argument);
       var head = bach.browser().head(uri);

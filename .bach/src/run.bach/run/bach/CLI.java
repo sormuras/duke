@@ -16,7 +16,7 @@ public record CLI(
     Optional<Boolean> __version,
     Optional<String> __printer_threshold,
     Optional<String> __printer_margin,
-    Optional<String> __project_directory,
+    Optional<String> __root_path,
     List<String> __trust_signature_email,
     List<Call> calls) {
 
@@ -27,10 +27,6 @@ public record CLI(
   public static final List<String> HELP_FLAGS = List.of("?", "/?", "-?", "-h", "--help");
 
   public static final int DEFAULT_PRINTER_MARGIN = 160;
-
-  public static boolean isFirstArgumentHelpOptionName(List<String> arguments) {
-    return !arguments.isEmpty() && HELP_FLAGS.contains(arguments.get(0));
-  }
 
   public CLI() {
     this(
@@ -74,8 +70,8 @@ public record CLI(
     return __printer_margin.map(Integer::parseInt).orElse(DEFAULT_PRINTER_MARGIN);
   }
 
-  public Path projectDirectory() {
-    return __project_directory.map(Path::of).orElse(Path.of(""));
+  public Path rootPath() {
+    return __root_path.map(Path::of).orElse(Path.of(""));
   }
 
   public List<String> trustSignatureEmails() {
@@ -84,17 +80,19 @@ public record CLI(
 
   public String toString(int indent) {
     var joiner = new StringJoiner("\n");
-    joiner.add("<options>");
+    joiner.add("Optional Flags");
     joiner.add("  --help = " + help());
-    joiner.add("  --offline = " + offline() + " -> online = " + online());
+    joiner.add("  --offline = " + offline() + " implies online = " + online());
     joiner.add("  --verbose = " + verbose());
     joiner.add("  --version = " + version());
+    joiner.add("Optional Key-Value Pairs");
+    joiner.add("  --printer-margin = " + printerMargin());
     joiner.add("  --printer-threshold = " + printerThreshold());
-    joiner.add("  --project-directory = " + projectDirectory().toUri());
+    joiner.add("  --root-path = \"" + rootPath() + "\" (" + rootPath().toUri() + ")");
     joiner.add("  --trust-signature-email = " + trustSignatureEmails());
-    joiner.add("<calls>");
+    joiner.add("Tool Calls");
     if (calls.isEmpty()) joiner.add("  <empty>");
-    calls.forEach(call -> joiner.add("  - " + String.join(" ", call.command())));
+    calls.forEach(call -> joiner.add("  + " + String.join(" ", call.command())));
     return joiner.toString().indent(indent).stripTrailing();
   }
 
@@ -112,7 +110,7 @@ public record CLI(
     var version = __verbose.orElse(null);
     var printerThreshold = __printer_threshold.orElse(null);
     var printerMargin = __printer_margin.orElse(null);
-    var projectDirectory = __project_directory.orElse(null);
+    var rootPath = __root_path.orElse(null);
     var trustSignatureEmails = new ArrayList<>(trustSignatureEmails());
     var calls = new ArrayList<>(calls());
     // handle options by parsing flags and key-value paris
@@ -158,12 +156,13 @@ public record CLI(
           printerMargin = pop ? arguments.pop() : argument.substring(val);
           continue;
         }
-        if (key.equals("--project-directory")) {
-          projectDirectory = pop ? arguments.pop() : argument.substring(val);
+        if (key.equals("--root-path")) {
+          rootPath = pop ? arguments.pop() : argument.substring(val);
           continue;
         }
         if (key.equals("--trust-signature-email")) {
-          trustSignatureEmails.add(pop ? arguments.pop() : argument.substring(val));
+          var value = pop ? arguments.pop() : argument.substring(val);
+          trustSignatureEmails.addAll(List.of(value.split(",")));
           continue;
         }
       }
@@ -193,7 +192,7 @@ public record CLI(
         Optional.ofNullable(version),
         Optional.ofNullable(printerThreshold),
         Optional.ofNullable(printerMargin),
-        Optional.ofNullable(projectDirectory),
+        Optional.ofNullable(rootPath),
         List.copyOf(trustSignatureEmails),
         List.copyOf(calls));
   }

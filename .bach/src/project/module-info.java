@@ -5,9 +5,9 @@ import run.bach.*;
 module project {
   requires run.bach;
 
-  provides Creator with
-      ProjectLocalCreator;
-  provides BachOperator with
+  provides BachFactory with
+      ProjectLocalBachFactory;
+  provides ToolOperator with
       format,
       ProjectLocalOperator;
   provides ToolProvider with

@@ -9,17 +9,18 @@ module run.bach {
   requires jdk.jartool;
   requires jdk.javadoc;
   requires jdk.jdeps;
+  requires jdk.jfr;
   requires jdk.jlink;
   requires jdk.jpackage;
 
   exports run.bach;
 
-  uses Creator;
-  uses Library;
-  uses BachOperator;
+  uses BachFactory;
+  uses Locator;
+  uses ToolOperator;
   uses ToolProvider;
 
-  provides BachOperator with
+  provides ToolOperator with
       HashOperator,
       ImportOperator,
       InstallOperator,
@@ -31,10 +32,8 @@ module run.bach {
       ListPathsOperator,
       ListModulesOperator,
       ListToolsOperator,
-      ShowLogbookOperator,
       SignatureOperator;
   provides ToolProvider with
-      BachToolProvider,
       ListFilesTool,
       TreeCreateTool,
       TreeDeleteTool,

@@ -24,36 +24,9 @@ public interface Register {
 
   String home();
 
-  String source(Index index, String name);
+  String source(RegisterIndex index, String name);
 
   String zip();
-
-  enum Index {
-    /** A module-uri index mapping Java module names to their remote modular JAR file locations. */
-    LIBRARY_MODULES("external-modules", ".library.properties"),
-    /** An asset-uri index mapping local file paths to their external resource locations. */
-    TOOL_MATERIALS("external-tools", ".tool.properties");
-
-    private final String directory;
-    private final String extension;
-
-    Index(String directory, String extension) {
-      this.directory = directory;
-      this.extension = extension;
-    }
-
-    public String directory() {
-      return directory;
-    }
-
-    public String extension() {
-      return extension;
-    }
-
-    public String name(String path) {
-      return path.substring(path.lastIndexOf('/') + 1).replace(extension, "");
-    }
-  }
 
   record GitHub(String user, String repo, String hash) implements Register {
     @Override
@@ -65,10 +38,10 @@ public interface Register {
     }
 
     @Override
-    public String source(Index index, String name) {
+    public String source(RegisterIndex index, String name) {
       var joiner = new StringJoiner("/", "https://github.com/", "");
       joiner.add(user).add(repo).add("raw").add(hash);
-      joiner.add(".bach").add(index.directory()).add(name + index.extension());
+      joiner.add(".bach").add(index.path()).add(name + index.extension());
       return joiner.toString();
     }
 

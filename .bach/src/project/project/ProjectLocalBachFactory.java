@@ -1,10 +1,10 @@
 package project;
 
 import run.bach.Bach;
+import run.bach.BachFactory;
 import run.bach.Configuration;
-import run.bach.Creator;
 
-public class ProjectLocalCreator implements Creator {
+public class ProjectLocalBachFactory implements BachFactory {
   @Override
   public Bach createBach(Configuration configuration) {
     return new ProjectLocalBach(configuration);

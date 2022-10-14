@@ -2,9 +2,9 @@ package run.bach.internal.tool;
 
 import java.util.List;
 import run.bach.Bach;
-import run.bach.BachOperator;
+import run.bach.ToolOperator;
 
-public record ListToolsOperator(String name) implements BachOperator {
+public record ListToolsOperator(String name) implements ToolOperator {
   public ListToolsOperator() {
     this("list-tools");
   }

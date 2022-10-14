@@ -7,10 +7,10 @@ import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.List;
 import run.bach.Bach;
-import run.bach.BachOperator;
+import run.bach.ToolOperator;
 import run.bach.internal.PathSupport;
 
-public record SignatureOperator(String name) implements BachOperator {
+public record SignatureOperator(String name) implements ToolOperator {
 
   public SignatureOperator() {
     this("signature");

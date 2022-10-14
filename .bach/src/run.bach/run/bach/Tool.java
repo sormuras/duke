@@ -16,19 +16,22 @@ public sealed interface Tool {
     return name().equals(string) || name().endsWith('/' + string);
   }
 
-  static Tool of(BachOperator operator) {
-    return new BachOperatorTool(prefixIfNeeded(operator.name(), operator), operator);
+  static Tool ofToolOperator(ToolOperator operator) {
+    var name = computeName(operator.name(), operator);
+    return new ToolOperatorTool(name, operator);
   }
 
-  static Tool of(ToolProvider provider) {
-    return new ToolProviderTool(prefixIfNeeded(provider.name(), provider), provider);
+  static Tool ofToolProvider(ToolProvider provider) {
+    var name = computeName(provider.name(), provider);
+    return new ToolProviderTool(name, provider);
   }
 
   static Tool ofNativeProcess(String name, List<String> command) {
-    return Tool.of(new NativeProcessToolProvider(name, command));
+    var provider = new NativeProcessToolProvider(name, command);
+    return new ToolProviderTool(name, provider);
   }
 
-  private static String prefixIfNeeded(String name, Object object) {
+  private static String computeName(String name, Object object) {
     if (name.indexOf('/') >= 0) return name;
     var module = object.getClass().getModule();
     var prefix = module.isNamed() ? module.getName() : object.getClass().getCanonicalName();
@@ -37,5 +40,5 @@ public sealed interface Tool {
 
   record ToolProviderTool(String name, ToolProvider provider) implements Tool {}
 
-  record BachOperatorTool(String name, BachOperator operator) implements Tool {}
+  record ToolOperatorTool(String name, ToolOperator operator) implements Tool {}
 }

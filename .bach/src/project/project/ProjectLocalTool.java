@@ -6,7 +6,7 @@ import java.util.spi.ToolProvider;
 public class ProjectLocalTool implements ToolProvider {
   @Override
   public String name() {
-    return "noop";
+    return "not";
   }
 
   @Override

@@ -2,9 +2,9 @@ package project;
 
 import java.util.List;
 import run.bach.Bach;
-import run.bach.BachOperator;
+import run.bach.ToolOperator;
 
-public class ProjectLocalOperator implements BachOperator {
+public class ProjectLocalOperator implements ToolOperator {
   @Override
   public String name() {
     return "noop";
