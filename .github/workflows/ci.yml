@@ -18,5 +18,5 @@ jobs:
         uses: oracle-actions/setup-java@v1
       - name: 'Build and Test'
         run: |
-          javac --module run.duke,test.duke --module-source-path ./*/src -d classes
+          javac --module run.duke,test.duke --module-source-path './*/src' -d classes
           java --module-path classes --module test.duke/test.duke.Main
