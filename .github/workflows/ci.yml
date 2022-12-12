@@ -16,5 +16,7 @@ jobs:
         uses: actions/checkout@v3
       - name: 'Set up latest JDK'
         uses: oracle-actions/setup-java@v1
-      - name: 'Build with Bach'
-        run: java .bach/bin/bach.java
+      - name: 'Build and Test'
+        run: |
+          javac --module run.duke,test.duke --module-source-path ./*/src -d classes
+          java --module-path classes --module test.duke/test.duke.Main
