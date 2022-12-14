@@ -3,18 +3,24 @@ package test.duke;
 import java.io.PrintWriter;
 import java.util.spi.ToolProvider;
 import run.duke.ToolOperator;
-import run.duke.ToolRunner;
+import run.duke.Workbench;
 
-public record MockOperator(String name) implements ToolOperator {
+public record MockOperator() implements ToolOperator {
   @Override
-  public ToolProvider provider(ToolRunner runner) {
-    return new Provider(name(), (MockRunner) runner);
+  public String name() {
+    return "moper";
   }
 
-  record Provider(String name, MockRunner runner) implements ToolProvider {
+  @Override
+  public ToolProvider provider(Workbench workbench) {
+    return new Provider(name(), workbench);
+  }
+
+  record Provider(String name, Workbench workbench) implements ToolProvider {
     @Override
     public int run(PrintWriter out, PrintWriter err, String... args) {
-      for (var arg : args) runner.runTool(arg);
+      System.out.println(workbench.workpiece(String.class));
+      for (var arg : args) workbench.run(arg);
       return 0;
     }
   }
