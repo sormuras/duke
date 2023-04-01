@@ -1,0 +1,29 @@
+#
+# Java Launcher Argument File running module "run.duke"
+#
+# Usage: java @duke [<args>...]
+#
+
+#
+# Common debug-related arguments
+#
+# --show-version
+# --show-module-resolution
+#
+-Xlog:jfr+startup=error
+-XX:StartFlightRecording:name=Duke,filename=.duke/recording.jfr,dumponexit=true
+
+#
+# Path to application modules
+#
+--module-path .duke/bin
+
+#
+# Set of root modules
+#
+--add-modules ALL-DEFAULT,ALL-MODULE-PATH
+
+#
+# Module to launch
+#
+--module run.duke
