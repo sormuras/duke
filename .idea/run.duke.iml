@@ -4,7 +4,6 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/src/run.duke">
       <sourceFolder url="file://$MODULE_DIR$/src/run.duke/main/java" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/src/run.duke/main/java/.github" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
