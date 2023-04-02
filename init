@@ -1,0 +1,2 @@
+-Duke.init.module-source-path=src/*/main/java
+src/run.duke/main/java/run/duke/Init.java

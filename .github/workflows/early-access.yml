@@ -23,6 +23,6 @@ jobs:
           distribution: 'oracle'
           java-version: 20
       - name: 'Initialize Duke'
-        run: java -Duke.init.module-source-path=src/*/main/java src/run.duke/main/java/run/duke/Init.java
+        run: java @init
       - name: 'Launch Duke'
         run: java @duke
