@@ -1,6 +1,7 @@
 package demo;
 
 import build.BuildToolOperator;
+import run.duke.Configuration;
 import run.duke.Configurator;
 import run.duke.ToolFinder;
 
