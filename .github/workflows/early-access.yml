@@ -23,6 +23,6 @@ jobs:
           distribution: 'oracle'
           java-version: 20
       - name: 'Initialize Duke'
-        run: java @init
+        run: java -Debug @init
       - name: 'Build Duke with Duke'
-        run: java @duke build
+        run: java -Debug @duke build
