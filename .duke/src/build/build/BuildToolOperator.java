@@ -2,7 +2,6 @@ package build;
 
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import run.duke.ToolCall;
 import run.duke.ToolOperator;
@@ -19,20 +18,12 @@ public record BuildToolOperator(String name) implements ToolOperator {
 
   @Override
   public int run(ToolRunner runner, PrintWriter out, PrintWriter err, String... args) {
-    Consumer<ToolCall> run =
-        (call) -> {
-          var thread = Thread.currentThread().threadId();
-          var command = call.toCommandLine();
-          out.printf("[%04X] %s%n", thread, command);
-          runner.run(call);
-        };
-
     try {
       out.println("Processing source files...");
-      Stream.of(compileJavaClasses(), generateHtmlPages()).parallel().forEach(run);
+      Stream.of(compileJavaClasses(), generateHtmlPages()).parallel().forEach(runner::run);
 
       out.println("Archiving class files...");
-      run.accept(createJavaArchive());
+      runner.run(createJavaArchive());
       return 0;
     } catch (Exception exception) {
       exception.printStackTrace(err);
