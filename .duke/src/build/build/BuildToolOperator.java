@@ -55,7 +55,7 @@ public record BuildToolOperator(String name) implements ToolOperator {
     var destination = Path.of(".duke/out/documentation/api");
     return Command.of("javadoc")
         .with("-quiet")
-        .with("--module", "run.duke")
+        .with("--module", "jdk.tools,run.duke")
         .with("--module-source-path", SOURCES.toString().replace("run.duke", "*"))
         .with("-X" + "doc" + "lint:-missing")
         .with("-d", destination);
