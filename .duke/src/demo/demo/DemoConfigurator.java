@@ -4,7 +4,7 @@ import build.BuildToolOperator;
 import jdk.tools.ToolFinder;
 import run.duke.Configuration;
 import run.duke.Configurator;
-import run.duke.menu.DukeMenu;
+import run.duke.DukeMenu;
 
 public record DemoConfigurator() implements Configurator {
   @Override
