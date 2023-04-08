@@ -1,9 +1,9 @@
 package demo;
 
 import build.BuildToolOperator;
+import jdk.tools.ToolFinder;
 import run.duke.Configuration;
 import run.duke.Configurator;
-import run.duke.ToolFinder;
 import run.duke.menu.DukeMenu;
 
 public record DemoConfigurator() implements Configurator {
@@ -11,6 +11,7 @@ public record DemoConfigurator() implements Configurator {
   public Configuration configure(Configuration configuration) {
     var finder =
         ToolFinder.compose(
+            ToolFinder.of(configuration.layer()),
             new BuildToolOperator(),
             new DemoToolFinder(),
             ToolFinder.of("javac", "jar", "javadoc"),

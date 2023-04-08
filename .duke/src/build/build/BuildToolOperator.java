@@ -3,9 +3,9 @@ package build;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import run.duke.ToolCall;
-import run.duke.ToolOperator;
-import run.duke.ToolRunner;
+import jdk.tools.Command;
+import jdk.tools.ToolOperator;
+import jdk.tools.ToolRunner;
 
 public record BuildToolOperator(String name) implements ToolOperator {
   private static final int RELEASE = 17;
@@ -31,8 +31,8 @@ public record BuildToolOperator(String name) implements ToolOperator {
     }
   }
 
-  private ToolCall compileJavaClasses() {
-    return ToolCall.of("javac")
+  private Command compileJavaClasses() {
+    return Command.of("javac")
         .with("--module", "run.duke")
         .with("--module-source-path", SOURCES.toString().replace("run.duke", "*"))
         .with("--release", RELEASE)
@@ -41,9 +41,9 @@ public record BuildToolOperator(String name) implements ToolOperator {
         .with("-d", CLASSES);
   }
 
-  private ToolCall createJavaArchive() {
+  private Command createJavaArchive() {
     var file = Path.of(".duke/out/archives/main/run.duke.jar");
-    return ToolCall.of("jar")
+    return Command.of("jar")
         .with("--create")
         .with("--file", file)
         .with("--main-class", "run.duke.Main")
@@ -51,9 +51,9 @@ public record BuildToolOperator(String name) implements ToolOperator {
         .with("-C", CLASSES.resolve("run.duke"), ".");
   }
 
-  private ToolCall generateHtmlPages() {
+  private Command generateHtmlPages() {
     var destination = Path.of(".duke/out/documentation/api");
-    return ToolCall.of("javadoc")
+    return Command.of("javadoc")
         .with("-quiet")
         .with("--module", "run.duke")
         .with("--module-source-path", SOURCES.toString().replace("run.duke", "*"))

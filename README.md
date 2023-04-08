@@ -11,10 +11,14 @@ The recommended way is to install the source files of Duke as a Git Submodule.
 
 ### Install Duke as Git Submodule
 
-Mounting Duke's source files inside your project as a Git Submodule grants you advantages:
+Mounting source files inside your project as submodules grants you advantages:
 
 - transparency: source code with specification documentation in your hand
 - control: debug a run by setting break points and tweak workflows on-the-fly
+
+Use `git` to add experimental `jdk.tools` source files directly as a submodule into your project.
+
+- `git submodule add https://github.com/sormuras/jdk.tools.git .duke/src/jdk.tools`
 
 Use `git` to add Duke's source files directly as a submodule into your project.
 

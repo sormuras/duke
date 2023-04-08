@@ -2,11 +2,12 @@ package demo;
 
 import java.io.PrintWriter;
 import java.util.List;
-import run.duke.Tool;
-import run.duke.ToolCall;
-import run.duke.ToolFinder;
-import run.duke.ToolOperator;
-import run.duke.ToolRunner;
+import jdk.tools.Command;
+import jdk.tools.Task;
+import jdk.tools.Tool;
+import jdk.tools.ToolFinder;
+import jdk.tools.ToolOperator;
+import jdk.tools.ToolRunner;
 
 public class DemoToolFinder implements ToolFinder {
   @Override
@@ -18,7 +19,7 @@ public class DemoToolFinder implements ToolFinder {
     record ListTools(String name) implements ToolOperator {
       @Override
       public int run(ToolRunner runner, PrintWriter out, PrintWriter err, String... args) {
-        var tools = runner.finder().tools();
+        var tools = runner.context().finder().tools();
         for (var tool : tools) out.println(tool.toNamespaceAndName());
         out.printf("    %d tool%s%n", tools.size(), tools.size() == 1 ? "" : "s");
         return 0;
@@ -27,12 +28,12 @@ public class DemoToolFinder implements ToolFinder {
     return new ListTools("status");
   }
 
-  private Tool versions() {
-    return Tool.of(
+  private Task versions() {
+    return Task.of(
         "demo",
         "versions",
-        ToolCall.of("jar").with("--version"),
-        ToolCall.of("javac").with("--version"),
-        ToolCall.of("javadoc").with("--version"));
+        Command.of("jar").with("--version"),
+            Command.of("javac").with("--version"),
+            Command.of("javadoc").with("--version"));
   }
 }

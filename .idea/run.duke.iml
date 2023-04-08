@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/run.duke/main/java" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="jdk.tools" />
     <orderEntry type="inheritedJdk" />
   </component>
 </module>

@@ -1,5 +1,5 @@
 module build {
-  requires run.duke;
+  requires jdk.tools;
 
   exports build to demo;
 
