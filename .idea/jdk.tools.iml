@@ -4,8 +4,10 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/src/jdk.tools">
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.tools/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.tools/test/java" isTestSource="true" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="TEST" name="JUnit" level="project" />
     <orderEntry type="inheritedJdk" />
   </component>
 </module>

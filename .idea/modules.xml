@@ -8,6 +8,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/duke.iml" filepath="$PROJECT_DIR$/.idea/duke.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/jdk.tools.iml" filepath="$PROJECT_DIR$/.idea/jdk.tools.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/run.duke.iml" filepath="$PROJECT_DIR$/.idea/run.duke.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/test.jdk.tools.iml" filepath="$PROJECT_DIR$/.idea/test.jdk.tools.iml" />
     </modules>
   </component>
 </project>
