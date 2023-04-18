@@ -4,3 +4,6 @@
 [submodule "src/run.duke/main/java"]
 	path = src/run.duke/main/java
 	url = https://github.com/sormuras/run.duke.git
+[submodule ".duke/src/run.duke.store"]
+	path = .duke/src/run.duke.store
+	url = https://github.com/sormuras/run.duke.store.git
