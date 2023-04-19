@@ -5,8 +5,6 @@ module demo {
   requires jdk.tools;
   requires run.duke;
 
-  provides run.duke.Configurator with
-      demo.DemoConfigurator;
   provides jdk.tools.ToolFinder with
       demo.DemoToolFinder;
 }
