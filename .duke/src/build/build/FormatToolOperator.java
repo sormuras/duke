@@ -1,6 +1,8 @@
 package build;
 
 import java.io.PrintWriter;
+import java.util.Set;
+
 import jdk.tools.Command;
 import jdk.tools.ToolOperator;
 import jdk.tools.ToolRunner;
@@ -8,6 +10,11 @@ import jdk.tools.ToolRunner;
 public record FormatToolOperator(String name) implements ToolOperator {
   public FormatToolOperator() {
     this("format");
+  }
+
+  @Override
+  public Set<String> requires() {
+    return Set.of("google-java-format");
   }
 
   @Override
