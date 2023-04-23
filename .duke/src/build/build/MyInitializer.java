@@ -5,6 +5,7 @@ import jdk.tools.Task;
 import jdk.tools.ToolFinder;
 import run.duke.DukeInitializer;
 import run.duke.store.EchoInstaller;
+import run.duke.store.MavenInstaller;
 
 public record MyInitializer(String namespace) implements DukeInitializer {
   public MyInitializer() {
@@ -15,6 +16,7 @@ public record MyInitializer(String namespace) implements DukeInitializer {
   public ToolFinder initializeToolFinder(Helper helper) throws Exception {
     return ToolFinder.compose(
         helper.install(new EchoInstaller(), "99"),
+        helper.install(new MavenInstaller(), "3.9.1"),
         Task.of(namespace, "b", "build"),
         Task.of(
             namespace,
