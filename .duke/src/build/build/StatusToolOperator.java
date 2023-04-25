@@ -4,12 +4,14 @@ import java.io.PrintWriter;
 import jdk.tools.Command;
 import jdk.tools.ToolOperator;
 import jdk.tools.ToolRunner;
+import jdk.tools.Tools;
 
 record StatusToolOperator(String namespace, String name) implements ToolOperator {
   @Override
   public int run(ToolRunner runner, PrintWriter out, PrintWriter err, String... args) {
     var tools = runner.context().finder().tools();
-    for (var tool : tools) out.println(tool.toNamespaceAndName());
+    out.println("Tools");
+    out.println(Tools.toTextBlock(tools));
     out.printf("    %d tool%s%n", tools.size(), tools.size() == 1 ? "" : "s");
 
     var units = Command.of("?").withFindFiles("**/module-info.java").arguments();
