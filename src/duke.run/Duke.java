@@ -1,9 +1,11 @@
 import module java.base;
 
-/** Duke's Java program and JShell interface. */
-class Duke {
-  private static final String VERSION = "2025.11.24+10.08";
+/// Duke's Java program and JShell interface.
+public final class Duke {
+  private static final String VERSION = "2025.11.24+11.42";
 
+  private static final Path DEFAULT_LIB_DIRECTORY = Path.of("lib");
+  private static final Path DEFAULT_LOOKUP_FILE = Path.of("lib", ".modules.properties");
   private static final String ROOTS_KEY_NAME = "@RootModuleNames";
   private static final String SOURCES_KEY_NAME = "@ModulesProperties";
   private static final String PINNED_KEY_PREFIX = "@ModuleLink|";
@@ -12,7 +14,7 @@ class Duke {
     about();
     IO.println();
     if (args.length == 1) {
-      writeModules();
+      generateLinks();
       return;
     }
     printLinks();
@@ -39,65 +41,37 @@ class Duke {
   }
 
   static void printLinks() {
-    var file = "lib/.modules.properties";
-    var links = Modules.lookup(file).links();
+    var links = Modules.Lookup.of(DEFAULT_LOOKUP_FILE).links();
     var size = links.size();
     var s = size == 1 ? "" : "s";
     links.forEach(IO::println);
-    IO.println("    %d link%s in %s lookup".formatted(size, s, file));
+    IO.println("    %d link%s in %s lookup".formatted(size, s, DEFAULT_LOOKUP_FILE));
   }
 
   static void printModules() {
-    var directory = "lib";
-    var modules = Modules.folder(directory).list();
+    var modules = Modules.Folder.of(DEFAULT_LIB_DIRECTORY).list();
     var size = modules.size();
     var s = size == 1 ? "" : "s";
     modules.forEach(IO::println);
-    IO.println("    %d module%s in %s directory".formatted(size, s, directory));
+    IO.println("    %d module%s in %s directory".formatted(size, s, DEFAULT_LIB_DIRECTORY));
   }
 
   static void resolveModules() {
-    var directory = "lib";
-    Modules.resolver(directory).resolve();
+    Modules.Resolver.of(DEFAULT_LIB_DIRECTORY).resolve();
   }
 
-  static void writeModules() {
-    var file = Path.of("lib", ".modules.properties");
-    Modules.Writer.of(file).write(file);
+  static void generateLinks() {
+    Modules.Writer.of(DEFAULT_LOOKUP_FILE).write(DEFAULT_LOOKUP_FILE);
   }
 
-  static class Modules {
-    static Folder folder(String directory) {
-      return new Folder(Path.of(directory));
-    }
-
-    static Lookup lookup(String file) {
-      var path = Path.of(file);
-      var properties = new Properties();
-      try {
-        properties.load(new StringReader(Files.readString(path)));
-        var links =
-            properties.stringPropertyNames().stream()
-                .filter(name -> !name.startsWith("@"))
-                .sorted()
-                .map(name -> Link.of(name, properties.getProperty(name)))
-                .toList();
-        var roots = List.of(properties.getProperty(ROOTS_KEY_NAME, "").split(","));
-        return new Lookup(links, roots);
-      } catch (Exception exception) {
-        throw new RuntimeException("Loading lookup failed for: " + file, exception);
+  public static final class Modules {
+    public record Folder(Path directory) {
+      public static Folder of(Path directory) {
+        return new Folder(directory);
       }
-    }
 
-    static Resolver resolver(String directory) {
-      var folder = Modules.folder(directory);
-      var lookup = Modules.lookup(folder.directory().resolve(".modules.properties").toString());
-      return new Modules.Resolver(folder, lookup);
-    }
-
-    record Folder(Path directory) {
       /// Compute observable modules and return their names.
-      List<String> list() {
+      public List<String> list() {
         var finder = ModuleFinder.of(directory);
         var modules = finder.findAll();
         return modules.stream()
@@ -108,7 +82,7 @@ class Duke {
       }
 
       /// Compute missing modules and return their names.
-      List<String> missing() {
+      public List<String> missing() {
         var finder = ModuleFinder.of(directory);
         var universe = ModuleFinder.compose(finder, ModuleFinder.ofSystem());
         return finder.findAll().stream()
@@ -131,26 +105,49 @@ class Duke {
       }
     }
 
-    record Link(String name, URI location) {
-      static Link of(String name, String location) {
+    public record Link(String name, URI location) {
+      public static Link of(String name, String location) {
         return new Link(name, URI.create(location));
       }
     }
 
-    record Lookup(List<Link> links, List<String> roots) {
+    public record Lookup(List<Link> links, List<String> roots) {
+      public static Lookup of(Path file) {
+        var properties = new Properties();
+        try {
+          properties.load(new StringReader(Files.readString(file)));
+          var links =
+              properties.stringPropertyNames().stream()
+                  .filter(name -> !name.startsWith("@"))
+                  .sorted()
+                  .map(name -> Link.of(name, properties.getProperty(name)))
+                  .toList();
+          var roots = List.of(properties.getProperty(ROOTS_KEY_NAME, "").split(","));
+          return new Lookup(links, roots);
+        } catch (Exception exception) {
+          throw new RuntimeException("Loading lookup failed for: " + file, exception);
+        }
+      }
+
       Optional<Link> findLinkByName(String name) {
         return links.stream().filter(link -> link.name().equals(name)).findFirst();
       }
     }
 
-    record Resolver(Folder folder, Lookup lookup) {
-      void resolve() {
+    public record Resolver(Folder folder, Lookup lookup) {
+      public static Resolver of(Path directory) {
+        var folder = Folder.of(directory);
+        var lookup = Lookup.of(directory.resolve(DEFAULT_LOOKUP_FILE.getFileName()));
+        return new Resolver(folder, lookup);
+      }
+
+      public void resolve() {
         lookup.roots().stream().parallel().forEach(this::downloadModule);
         downloadAllMissingModules();
       }
 
       /// Download single module.
-      void downloadModule(String name) {
+      public void downloadModule(String name) {
         // Fail-fast for unknown module name
         var link = lookup.findLinkByName(name);
         if (link.isEmpty()) throw new FindException("Module name not linked: " + name);
@@ -187,8 +184,8 @@ class Duke {
       }
     }
 
-    record Writer(List<URI> sources, List<Link> pins, List<String> roots) {
-      static Writer of(Path file) {
+    public record Writer(List<URI> sources, List<Link> pins, List<String> roots) {
+      public static Writer of(Path file) {
         var properties = new Properties();
         try {
           properties.load(new StringReader(Files.readString(file)));
@@ -214,7 +211,7 @@ class Duke {
         }
       }
 
-      void write(Path target) {
+      public void write(Path target) {
         var lines = new ArrayList<String>();
         //
         var rootsJoiner = new StringJoiner(",\\\n", ROOTS_KEY_NAME + "=\\\n", "");
@@ -275,4 +272,6 @@ class Duke {
       }
     }
   }
+
+  private Duke() {}
 }
