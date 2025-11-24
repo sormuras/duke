@@ -6,6 +6,6 @@
 
 Use in `jshell` session:
 ```terminaloutput
-/open https://src.duke.run/Duke.java
-Duke.status()
+jshell> /open https://src.duke.run/Duke.java
+jshell> Duke.about()
 ```

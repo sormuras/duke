@@ -2,11 +2,11 @@ import module java.base;
 
 /** Duke's Java program and JShell interface. */
 class Duke {
-  static final String VERSION = "2025.11.23+23.00";
+  private static final String VERSION = "2025.11.24+10.08";
 
-  static final String ROOTS_KEY_NAME = "@RootModuleNames";
-  static final String SOURCES_KEY_NAME = "@ModulesProperties";
-  static final String PINNED_KEY_PREFIX = "@ModuleLink|";
+  private static final String ROOTS_KEY_NAME = "@RootModuleNames";
+  private static final String SOURCES_KEY_NAME = "@ModulesProperties";
+  private static final String PINNED_KEY_PREFIX = "@ModuleLink|";
 
   static void main(String... args) {
     about();
