@@ -2,7 +2,7 @@ import module java.base;
 
 /// Duke's Java program and JShell interface.
 public final class Duke {
-  private static final String VERSION = "2025.11.24+11.42";
+  private static final String VERSION = "2025.11.27+10.22";
 
   private static final Path DEFAULT_LIB_DIRECTORY = Path.of("lib");
   private static final Path DEFAULT_LOOKUP_FILE = Path.of("lib", ".modules.properties");
@@ -160,11 +160,6 @@ public final class Duke {
           IO.println(name + " <- " + source + "...");
           Files.createDirectories(target.getParent());
           Files.copy(stream, target);
-          // Verify modular JAR file contains named module
-          ModuleFinder.of(target).findAll().stream()
-              .filter(reference -> reference.descriptor().name().equals(name))
-              .findAny()
-              .orElseThrow();
         } catch (IOException cause) {
           try {
             Files.deleteIfExists(target);
@@ -172,6 +167,8 @@ public final class Duke {
           }
           throw new UncheckedIOException(cause);
         }
+        // Verify modular JAR file contains named module
+        ModuleFinder.of(target).find(name).orElseThrow(() -> new FindException(name));
       }
 
       /// Compute missing modules and download them transitively.
